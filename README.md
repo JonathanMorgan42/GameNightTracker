@@ -46,7 +46,7 @@ A web application for managing competitive game nights with real-time scoring, t
 ```bash
 # Clone the repository
 git clone https://github.com/JonathanMorgan42/GameNightTracker.git
-cd GameNight
+cd GameNightTracker
 
 # Set up Python environment
 python -m venv venv
@@ -55,14 +55,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install Python dependencies
 pip install -r requirements.txt
 
+
+
+
 # Install Node.js dependencies
 npm install
 
 # Build frontend assets
 npm run build
-
-# Initialize database
-flask db upgrade
 
 # Run the application
 flask run
