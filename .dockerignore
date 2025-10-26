@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Development
+.env
+.env.local
+.env.development
+*.log
+logs/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+instance/*.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Node (if you have any frontend build tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+package.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Misc
+*.bak
+*.tmp
+.cache/
+.pytest_cache/
+migrations/versions/__pycache__/
+
+# Claude
+.claude/
+
+# Keep these
+!requirements.txt
+!Dockerfile
+!docker-compose.yml

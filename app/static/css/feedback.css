@@ -1,0 +1,383 @@
+/* Feedback Form Styles - Matches App Dark Theme */
+
+/* Feedback Page Container */
+.feedback-page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.feedback-header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.feedback-icon {
+    font-size: 3rem;
+    color: var(--accent-gold);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.feedback-header-section h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.feedback-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Feedback Section (for embedded form on index) */
+.feedback-section {
+    margin: 2rem 0.5rem 3rem 0.5rem;
+    padding: 0;
+}
+
+.feedback-button-container {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.feedback-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.85) 0%, rgba(245, 158, 11, 0.9) 100%);
+    color: #0f172a;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border: 1px solid rgba(251, 191, 36, 0.6);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+    min-height: var(--touch-target-md);
+}
+
+.feedback-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.5);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 1) 100%);
+    border-color: rgba(251, 191, 36, 0.8);
+}
+
+.feedback-cta-btn:active {
+    transform: translateY(0);
+}
+
+.feedback-card {
+    background: var(--bg-card);
+    border: 2px solid rgba(251, 191, 36, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.1);
+}
+
+.feedback-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.feedback-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.feedback-header p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.feedback-question {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.feedback-question label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.feedback-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.feedback-radio-option {
+    display: flex;
+    align-items: center;
+    background: rgba(51, 65, 85, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: var(--touch-target-sm);
+}
+
+.feedback-radio-option:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(251, 191, 36, 0.5);
+    transform: translateX(2px);
+}
+
+.feedback-radio-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    margin: 0 0.75rem 0 0;
+    cursor: pointer;
+    accent-color: var(--accent-gold);
+}
+
+.feedback-radio-option label {
+    flex: 1;
+    margin: 0;
+    cursor: pointer;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.feedback-radio-option input[type="radio"]:checked + label {
+    color: var(--accent-gold);
+    font-weight: 500;
+}
+
+.feedback-radio-option:has(input[type="radio"]:checked) {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+}
+
+.feedback-textarea-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.feedback-textarea-wrapper label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.feedback-textarea {
+    background: rgba(51, 65, 85, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.2s;
+}
+
+.feedback-textarea:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    background: rgba(51, 65, 85, 0.6);
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+
+.feedback-textarea::placeholder {
+    color: var(--text-dark);
+}
+
+.char-counter {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.feedback-submit-btn {
+    background: var(--gradient-gold);
+    color: var(--bg-primary);
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.3);
+    min-height: var(--touch-target-sm);
+}
+
+.feedback-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.4);
+}
+
+.feedback-submit-btn:active {
+    transform: translateY(0);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.form-actions .btn-secondary {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+    padding: 0.875rem 1.5rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--touch-target-sm);
+}
+
+.form-actions .btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-gold);
+}
+
+.field-errors {
+    margin-top: 0.25rem;
+}
+
+.error-message {
+    color: var(--accent-red);
+    font-size: 0.85rem;
+    display: block;
+}
+
+.feedback-thank-you {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: var(--accent-green-dim);
+    border: 1px solid var(--accent-green);
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.3s ease-in;
+}
+
+.feedback-thank-you.show {
+    display: block;
+}
+
+.feedback-thank-you i {
+    font-size: 3rem;
+    color: var(--accent-green);
+    margin-bottom: 1rem;
+}
+
+.feedback-thank-you h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.feedback-thank-you p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error Messages */
+.feedback-error {
+    background: var(--accent-red-dim);
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Mobile Optimization */
+@media (max-width: 640px) {
+    .feedback-page-container {
+        padding: 1.5rem 0.75rem;
+    }
+
+    .feedback-header-section h1 {
+        font-size: 1.5rem;
+    }
+
+    .feedback-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .feedback-icon {
+        font-size: 2.5rem;
+    }
+
+    .feedback-card {
+        padding: 1.25rem;
+    }
+
+    .feedback-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .feedback-radio-option {
+        padding: 0.625rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .form-actions .btn-secondary,
+    .form-actions .feedback-submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Desktop - Center and Max Width */
+@media (min-width: 768px) {
+    .feedback-section {
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}

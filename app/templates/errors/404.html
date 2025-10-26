@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Game Night Tracker{% endblock %}
+
+{% block head %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        max-width: 600px;
+        margin: 0 auto;
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .error-code {
+        font-size: 8rem;
+        font-weight: 700;
+        color: var(--primary-color, #3b82f6);
+        margin: 0;
+        line-height: 1;
+    }
+
+    .error-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+        margin: 1.5rem 0 1rem;
+    }
+
+    .error-message {
+        font-size: 1.1rem;
+        color: var(--text-secondary, #64748b);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .error-icon {
+        font-size: 6rem;
+        color: var(--primary-color, #3b82f6);
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .error-actions .btn {
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--primary-color, #3b82f6);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover, #2563eb);
+    }
+
+    .btn-secondary {
+        background: var(--bg-secondary, #e2e8f0);
+        color: var(--text-color, #1e293b);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg-tertiary, #cbd5e1);
+    }
+
+    @media (max-width: 768px) {
+        .error-code {
+            font-size: 5rem;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+        }
+
+        .error-message {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-icon">
+        <i class="fas fa-search"></i>
+    </div>
+    <h1 class="error-code">404</h1>
+    <h2 class="error-title">Page Not Found</h2>
+    <p class="error-message">
+        The page you're looking for doesn't exist or has been moved.
+        Let's get you back on track!
+    </p>
+    <div class="error-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Go Home
+        </a>
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Go Back
+        </a>
+    </div>
+</div>
+{% endblock %}

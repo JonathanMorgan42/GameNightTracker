@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Add New Game{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scores.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-plus-circle header-icon"></i>
+        <h1>Add New Game</h1>
+    </div>
+    <p class="header-subtitle">Create a new game with scoring settings</p>
+    <div class="header-actions">
+        <a href="{{ url_for('main.games') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+</div>
+
+<!-- Game Night Context Banner -->
+{% if working_context %}
+<div class="context-banner currently-building-banner">
+    <div class="context-banner-content">
+        <div class="context-info">
+            <i class="fas fa-hammer"></i>
+            <div class="context-text">
+                <strong>Currently Building:</strong> {{ working_context.name }}
+                <span class="context-date">{{ working_context.date.strftime('%B %d, %Y') }}</span>
+                {% if not working_context.is_active %}
+                <span class="context-status-badge"><i class="fas fa-lock"></i> Private</span>
+                {% else %}
+                <span class="context-status-badge"><i class="fas fa-broadcast-tower"></i> Live</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="context-actions">
+            <a href="{{ url_for('admin.game_night_management') }}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-exchange-alt"></i> Switch
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card form-card">
+    <form method="POST" action="{{ url_for('admin.add_game') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-section">
+            <h2>Basic Information</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Game Name <span class="required">*</span></label>
+                    {{ form.name(class="form-control", placeholder="Enter game name") }}
+                    {% if form.name.errors %}
+                        <div class="form-error">
+                            {% for error in form.name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Game Type <span class="required">*</span></label>
+                    {{ form.type(class="form-control", id="game-type-select", onchange="toggleCustomType()") }}
+                    {% if form.type.errors %}
+                        <div class="form-error">
+                            {% for error in form.type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group display-none" id="custom-type-group">
+                {{ form.custom_type.label }}
+                {{ form.custom_type(class="form-control", placeholder="e.g., Board Game, Card Game, Puzzle") }}
+                <p class="help-text">Enter your custom game type name</p>
+            </div>
+
+            <div class="form-group">
+                <label for="sequence_number">Game Order <span class="required">*</span></label>
+                <div class="sequence-input-wrapper">
+                    {{ form.sequence_number(class="form-control", placeholder=next_sequence) }}
+                    <div class="sequence-helper">
+                        <span class="sequence-badge">Recommended: {{ next_sequence }}</span>
+                    </div>
+                </div>
+                {% if form.sequence_number.errors %}
+                    <div class="form-error">
+                        {% for error in form.sequence_number.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <p class="help-text">This number controls the game order. Use {{ next_sequence }} to add at the end, or use any number to insert between existing games.</p>
+
+                {% if existing_games %}
+                <div class="game-order-preview">
+                    <strong>Current Game Order:</strong>
+                    <ol class="game-order-list">
+                        {% for existing_game in existing_games %}
+                        <li>
+                            <span class="game-seq">{{ existing_game.sequence_number }}.</span>
+                            <span class="game-name-preview">{{ existing_game.name }}</span>
+                            <span class="game-status-mini">{% if existing_game.isCompleted %}<i class="fas fa-check-circle"></i>{% else %}<i class="far fa-circle"></i>{% endif %}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Game Mode</h2>
+            <p class="help-text">Choose between regular scoring or tournament bracket</p>
+
+            <div class="game-mode-toggle">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="create_as_tournament" name="create_as_tournament" class="form-check" onchange="toggleGameMode()">
+                    <label for="create_as_tournament"><i class="fas fa-trophy"></i> Create as Tournament (elimination bracket)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section" id="scoring-section">
+            <h2>Scoring Settings</h2>
+
+            <div class="scoring-settings-grid">
+                <div class="form-group tooltip-container">
+                    <label for="point_scheme">
+                        Point Scheme Multiplier <span class="required">*</span>
+                        <button type="button" class="info-tooltip-trigger" aria-label="Learn about point schemes" onclick="toggleTooltip(event, this)">
+                            <i class="fas fa-question-circle"></i>
+                        </button>
+                    </label>
+                    {{ form.point_scheme(class="form-control") }}
+                    {% if form.point_scheme.errors %}
+                        <div class="form-error">
+                            {% for error in form.point_scheme.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Tooltip content -->
+                    <div class="info-tooltip" role="tooltip">
+                        <div class="tooltip-header">
+                            <span>How Point Schemes Work</span>
+                            <button type="button" class="tooltip-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="tooltip-body">
+                            <p><strong>Formula:</strong><br>
+                            Points = (Teams - Place + 1) × Point Scheme</p>
+                            <p><strong>Example with 4 teams, 2× multiplier:</strong></p>
+                            <ul>
+                                <li>1st place: (4 - 1 + 1) × 2 = <strong>8 points</strong></li>
+                                <li>2nd place: (4 - 2 + 1) × 2 = <strong>6 points</strong></li>
+                                <li>3rd place: (4 - 3 + 1) × 2 = <strong>4 points</strong></li>
+                                <li>4th place: (4 - 4 + 1) × 2 = <strong>2 points</strong></li>
+                            </ul>
+                            <p class="tooltip-tip">
+                                <i class="fas fa-lightbulb"></i>
+                                Higher multipliers make this game more valuable!
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="help-text">Points awarded between each place</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="metric_type">Score Method <span class="required">*</span></label>
+                    {{ form.metric_type(class="form-control") }}
+                    {% if form.metric_type.errors %}
+                        <div class="form-error">
+                            {% for error in form.metric_type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="help-text">How teams will be scored</p>
+                </div>
+
+                <div class="form-group form-group-full-width">
+                    <label>Winning Condition <span class="required">*</span></label>
+                    <div class="scoring-direction-tiles">
+                        <div class="scoring-tile" data-value="higher_better">
+                            <div class="tile-icon"><i class="fas fa-trophy"></i></div>
+                            <div class="tile-label">Higher Wins</div>
+                            <div class="tile-description">Example: Most points wins</div>
+                        </div>
+                        <div class="scoring-tile" data-value="lower_better">
+                            <div class="tile-icon"><i class="fas fa-stopwatch"></i></div>
+                            <div class="tile-label">Lower Wins</div>
+                            <div class="tile-description">Example: Fastest time wins</div>
+                        </div>
+                    </div>
+                    {{ form.scoring_direction(id="scoring_direction", class="display-none") }}
+                    {% if form.scoring_direction.errors %}
+                        <div class="form-error">
+                            {% for error in form.scoring_direction.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group form-group-full-width">
+                    <div class="checkbox-group">
+                        {{ form.public_input(class="form-check") }}
+                        {{ form.public_input.label }}
+                    </div>
+                    <p class="help-text">Allow participants to enter their own scores</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section" id="rounds-section">
+            <h2>Round-by-Round Scoring</h2>
+            <p class="help-text">Enable this for games like Wizard where teams compete over multiple rounds with cumulative scores</p>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    {{ form.has_rounds(class="form-check", id="has_rounds_checkbox", onchange="toggleRoundsConfig()") }}
+                    {{ form.has_rounds.label }}
+                </div>
+            </div>
+
+            <div id="rounds-config" class="display-none">
+                <div class="form-group">
+                    <label for="number_of_rounds">Number of Rounds</label>
+                    {{ form.number_of_rounds(class="form-control", id="number_of_rounds_input", min="1", max="50", onchange="updateRoundDescriptions()") }}
+                    {% if form.number_of_rounds.errors %}
+                        <div class="form-error">
+                            {% for error in form.number_of_rounds.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="help-text">How many rounds will this game have?</p>
+                </div>
+
+                <div id="round-descriptions-container">
+                    <!-- Round description inputs will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section" id="penalties-section">
+            <h2>Penalties</h2>
+            <p class="help-text">Define penalties such as "False start (+5)" or "Missed target (+10)". Units are automatically based on the scoring method (time = seconds, otherwise = points).</p>
+
+            <div id="penalties-container">
+                <!-- Penalties will be added here dynamically -->
+            </div>
+
+            <button type="button" class="btn btn-secondary" id="add-penalty-btn">
+                <i class="fas fa-plus"></i> Add Penalty
+            </button>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Create Game
+            </button>
+            <a href="{{ url_for('main.games') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass team count to JavaScript
+window.teamCount = {{ team_count }};
+// Pass existing penalties if validation failed
+window.existingPenalties = {{ penalties_json|default([])|tojson|safe }};
+
+// Toggle rounds configuration visibility
+function toggleRoundsConfig() {
+    const checkbox = document.getElementById('has_rounds_checkbox');
+    const config = document.getElementById('rounds-config');
+
+    if (checkbox.checked) {
+        config.classList.remove('display-none');
+        updateRoundDescriptions();
+    } else {
+        config.classList.add('display-none');
+    }
+}
+
+// Update round description inputs based on number of rounds
+function updateRoundDescriptions() {
+    const numRounds = parseInt(document.getElementById('number_of_rounds_input').value) || 0;
+    const container = document.getElementById('round-descriptions-container');
+
+    if (numRounds < 1 || numRounds > 50) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Save existing values before regenerating
+    const existingValues = {};
+    const existingInputs = container.querySelectorAll('input[name^="round_description_"]');
+    existingInputs.forEach(input => {
+        const match = input.name.match(/round_description_(\d+)/);
+        if (match) {
+            const roundNum = parseInt(match[1]);
+            existingValues[roundNum] = input.value;
+        }
+    });
+
+    let html = '<div class="form-group"><label>Round Descriptions (Optional)</label>';
+    html += '<p class="help-text">Add optional descriptions for each round (e.g., "First Half", "Overtime")</p>';
+
+    for (let i = 1; i <= numRounds; i++) {
+        const savedValue = existingValues[i] || '';
+        html += `
+            <div class="round-description-input" style="margin-bottom: 10px;">
+                <input type="text"
+                       name="round_description_${i}"
+                       class="form-control"
+                       placeholder="Round ${i} description (optional)"
+                       maxlength="100"
+                       value="${savedValue}">
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Initialize rounds config on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const hasRoundsCheckbox = document.getElementById('has_rounds_checkbox');
+    if (hasRoundsCheckbox && hasRoundsCheckbox.checked) {
+        toggleRoundsConfig();
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}

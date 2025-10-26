@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback - Game Night Tracker{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/feedback.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page-container">
+    <div class="feedback-header-section">
+        <i class="fas fa-comments feedback-icon"></i>
+        <h1>I'd Love Your Feedback!</h1>
+        <p class="feedback-subtitle">Help me improve the app by sharing your experience. Your input is valuable and helps me make this better for everyone.</p>
+    </div>
+
+    <div class="feedback-card">
+        <form method="POST" action="{{ url_for('main.submit_feedback') }}" class="feedback-form">
+            {{ form.hidden_tag() }}
+
+            <!-- Question 1: Scoring Clarity -->
+            <div class="feedback-question">
+                <label>{{ form.scoring_clarity.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.scoring_clarity.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="scoring_clarity_{{ value }}"
+                               name="scoring_clarity"
+                               value="{{ value }}"
+                               {% if form.scoring_clarity.data == value %}checked{% endif %}
+                               required>
+                        <label for="scoring_clarity_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.scoring_clarity.errors %}
+                <div class="field-errors">
+                    {% for error in form.scoring_clarity.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 2: Overall Clarity -->
+            <div class="feedback-question">
+                <label>{{ form.overall_clarity.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.overall_clarity.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="overall_clarity_{{ value }}"
+                               name="overall_clarity"
+                               value="{{ value }}"
+                               {% if form.overall_clarity.data == value %}checked{% endif %}
+                               required>
+                        <label for="overall_clarity_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.overall_clarity.errors %}
+                <div class="field-errors">
+                    {% for error in form.overall_clarity.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 3: Mobile Usability -->
+            <div class="feedback-question">
+                <label>{{ form.mobile_usability.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.mobile_usability.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="mobile_usability_{{ value }}"
+                               name="mobile_usability"
+                               value="{{ value }}"
+                               {% if form.mobile_usability.data == value %}checked{% endif %}
+                               required>
+                        <label for="mobile_usability_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.mobile_usability.errors %}
+                <div class="field-errors">
+                    {% for error in form.mobile_usability.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 4: Navigation Ease -->
+            <div class="feedback-question">
+                <label>{{ form.navigation_ease.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.navigation_ease.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="navigation_ease_{{ value }}"
+                               name="navigation_ease"
+                               value="{{ value }}"
+                               {% if form.navigation_ease.data == value %}checked{% endif %}
+                               required>
+                        <label for="navigation_ease_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.navigation_ease.errors %}
+                <div class="field-errors">
+                    {% for error in form.navigation_ease.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 5: Visual Design -->
+            <div class="feedback-question">
+                <label>{{ form.visual_design.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.visual_design.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="visual_design_{{ value }}"
+                               name="visual_design"
+                               value="{{ value }}"
+                               {% if form.visual_design.data == value %}checked{% endif %}
+                               required>
+                        <label for="visual_design_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.visual_design.errors %}
+                <div class="field-errors">
+                    {% for error in form.visual_design.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 6: Feature Satisfaction -->
+            <div class="feedback-question">
+                <label>{{ form.feature_satisfaction.label.text }}</label>
+                <div class="feedback-radio-group">
+                    {% for value, label in form.feature_satisfaction.choices %}
+                    <div class="feedback-radio-option">
+                        <input type="radio"
+                               id="feature_satisfaction_{{ value }}"
+                               name="feature_satisfaction"
+                               value="{{ value }}"
+                               {% if form.feature_satisfaction.data == value %}checked{% endif %}
+                               required>
+                        <label for="feature_satisfaction_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.feature_satisfaction.errors %}
+                <div class="field-errors">
+                    {% for error in form.feature_satisfaction.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Question 7: Suggestions -->
+            <div class="feedback-textarea-wrapper">
+                <label for="suggestions">{{ form.suggestions.label.text }}</label>
+                {{ form.suggestions(class="feedback-textarea", id="suggestions") }}
+                <div class="char-counter">
+                    <span id="charCount">0</span> / 500 characters
+                </div>
+                {% if form.suggestions.errors %}
+                <div class="field-errors">
+                    {% for error in form.suggestions.errors %}
+                    <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+                <button type="submit" class="feedback-submit-btn">
+                    <i class="fas fa-paper-plane"></i> {{ form.submit.label.text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Character counter for suggestions textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('suggestions');
+    const charCount = document.getElementById('charCount');
+
+    if (textarea && charCount) {
+        function updateCharCount() {
+            charCount.textContent = textarea.value.length;
+        }
+
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+    }
+});
+</script>
+{% endblock %}

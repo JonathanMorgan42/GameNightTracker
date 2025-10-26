@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Create Game Night - Admin{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-calendar-plus header-icon"></i>
+        <h1>Create New Game Night</h1>
+    </div>
+    <p class="header-subtitle">Set up a new game night session</p>
+    <div class="header-actions">
+        <a href="{{ url_for('admin.game_night_management') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Management
+        </a>
+    </div>
+</div>
+
+<!-- Workflow Explanation -->
+<div class="info-banner">
+    <div class="info-banner-icon">
+        <i class="fas fa-info-circle"></i>
+    </div>
+    <div class="info-banner-content">
+        <h3><i class="fas fa-tools"></i> Step 1: Create Your Game Night (Building Phase)</h3>
+        <p>This creates a new game night and sets it as the one you're <strong>currently building</strong>. Teams and games you create will be added to this game night.</p>
+        <p><strong><i class="fas fa-lock"></i> Important:</strong> The game night will remain <strong>private</strong> (not visible to players) until you activate it. This lets you prepare everything before making it public!</p>
+        <div class="workflow-mini">
+            <span class="workflow-mini-step active"><i class="fas fa-tools"></i> Create (Private)</span>
+            <i class="fas fa-arrow-right"></i>
+            <span class="workflow-mini-step"><i class="fas fa-users"></i> Add Teams</span>
+            <i class="fas fa-arrow-right"></i>
+            <span class="workflow-mini-step"><i class="fas fa-gamepad"></i> Add Games</span>
+            <i class="fas fa-arrow-right"></i>
+            <span class="workflow-mini-step"><i class="fas fa-broadcast-tower"></i> Activate for Public</span>
+        </div>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form method="POST" action="{{ url_for('admin.create_game_night') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+            {% if form.name.errors %}
+            <div class="form-errors">
+                {% for error in form.name.errors %}
+                <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.date.label(class="form-label") }}
+            {{ form.date(class="form-control") }}
+            {% if form.date.errors %}
+            <div class="form-errors">
+                {% for error in form.date.errors %}
+                <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-calendar-plus"></i> Create Game Night
+            </button>
+            <a href="{{ url_for('admin.game_night_management') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- What's Next Section -->
+<div class="whats-next-section">
+    <h3><i class="fas fa-compass"></i> What's Next?</h3>
+    <div class="next-steps-grid">
+        <div class="next-step-card">
+            <div class="next-step-number">2</div>
+            <div class="next-step-content">
+                <h4><i class="fas fa-users"></i> Add Teams</h4>
+                <p>After creating your game night, add the teams that will compete.</p>
+            </div>
+        </div>
+        <div class="next-step-card">
+            <div class="next-step-number">3</div>
+            <div class="next-step-content">
+                <h4><i class="fas fa-gamepad"></i> Add Games</h4>
+                <p>Define the games you'll play during the event.</p>
+            </div>
+        </div>
+        <div class="next-step-card">
+            <div class="next-step-number">4</div>
+            <div class="next-step-content">
+                <h4><i class="fas fa-broadcast-tower"></i> Activate for Public</h4>
+                <p>When you're ready (with at least 2 teams and 1 game), activate to make it immediately visible to all players on the leaderboard.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

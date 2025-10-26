@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Edit Team{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teams.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-users-cog header-icon"></i>
+        <h1>Edit Team: {{ team.name }}</h1>
+    </div>
+    <p class="header-subtitle">Update team information and participants</p>
+    <div class="header-actions">
+        <a href="{{ url_for('main.teams') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Teams
+        </a>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form method="POST" action="{{ url_for('admin.edit_team', team_id=team.id) }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-section">
+            <h2>Team Information</h2>
+
+            <div class="team-stats-summary">
+                <div class="stat-card">
+                    <div class="stat-value">{{ team.totalPoints }}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ team.games_played }}</div>
+                    <div class="stat-label">Games Played</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Team Name</label>
+                {{ form.name(class="form-control", placeholder="Enter team name") }}
+                {% if form.name.errors %}
+                    <div class="form-error">
+                        {% for error in form.name.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="color">Team Color</label>
+                <div class="color-picker-container">
+                    {{ form.color(class="form-control color-input", type="color") }}
+                    <span class="color-value" id="colorValue">{{ form.color.data or '#3b82f6' }}</span>
+                </div>
+                {% if form.color.errors %}
+                    <div class="form-error">
+                        {% for error in form.color.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="help-text">Choose a color to identify this team on the leaderboard</small>
+            </div>
+
+        </div>
+
+        <div class="form-section">
+            <h2>Participant 1</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="participant1FirstName">First Name</label>
+                    {{ form.participant1FirstName(class="form-control", placeholder="First name") }}
+                    {% if form.participant1FirstName.errors %}
+                        <div class="form-error">
+                            {% for error in form.participant1FirstName.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="participant1LastName">Last Name</label>
+                    {{ form.participant1LastName(class="form-control", placeholder="Last name") }}
+                    {% if form.participant1LastName.errors %}
+                        <div class="form-error">
+                            {% for error in form.participant1LastName.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Participant 2</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="participant2FirstName">First Name</label>
+                    {{ form.participant2FirstName(class="form-control", placeholder="First name") }}
+                    {% if form.participant2FirstName.errors %}
+                        <div class="form-error">
+                            {% for error in form.participant2FirstName.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="participant2LastName">Last Name</label>
+                    {{ form.participant2LastName(class="form-control", placeholder="Last name") }}
+                    {% if form.participant2LastName.errors %}
+                        <div class="form-error">
+                            {% for error in form.participant2LastName.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Optional Additional Participants -->
+        <div id="additional-participants-container">
+            {% for i in range(3, 7) %}
+            <div class="form-section additional-participant display-none" id="participant-section-{{ i }}">
+                <div class="participant-header">
+                    <h2>Participant {{ i }}</h2>
+                    <button type="button" class="btn btn-sm btn-danger remove-participant-btn" data-participant-index="{{ i }}">
+                        <i class="fas fa-times"></i> Remove
+                    </button>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="participant{{ i }}FirstName">First Name</label>
+                        {{ form['participant' ~ i ~ 'FirstName'](class="form-control", placeholder="First name") }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="participant{{ i }}LastName">Last Name</label>
+                        {{ form['participant' ~ i ~ 'LastName'](class="form-control", placeholder="Last name") }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="add-participant-section">
+            <button type="button" class="btn btn-secondary" id="add-participant-btn">
+                <i class="fas fa-user-plus"></i> Add Team Member
+            </button>
+            <p class="help-text">Teams must have at least 2 members. You can add up to 6 members total.</p>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/team-form.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gamenight_web
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persist database and logs (critical for zero-downtime deployments)
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - gamenight_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      # Rolling update strategy for zero-downtime
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.gamenight.version=${GIT_COMMIT:-latest}"
+
+  # Optional: Watchtower for automatic updates
+  # Uncomment if you want auto-updates from Docker Hub
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   container_name: gamenight_watchtower
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   command: --interval 300 --cleanup
+  #   networks:
+  #     - gamenight_network
+
+networks:
+  gamenight_network:
+    driver: bridge
+
+volumes:
+  instance_data:
+  logs_data:

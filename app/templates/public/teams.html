@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Admin Teams{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teams.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-users header-icon"></i>
+        <h1>Teams</h1>
+    </div>
+    <p class="header-subtitle">Manage your game night teams and participants</p>
+    {% if current_user.is_authenticated %}
+    <div class="header-actions">
+        <a href="{{ url_for('admin.add_team') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Team
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="team-actions">
+        <div class="search">
+            <input type="text" id="teamSearch" placeholder="Search teams...">
+        </div>
+        <div class="team-count">
+            <span>{{ teams|length }} teams total</span>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Mobile Card Layout -->
+    <div class="teams-mobile-cards">
+        {% for team in teams %}
+        <div class="team-card-mobile">
+            <div class="team-card-header">
+                <div class="team-color-circle" style="background-color: {{ team.color or '#3b82f6' }};"></div>
+                <div class="team-info">
+                    <h3 class="team-name">{{ team.name }}</h3>
+                    <div class="team-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-trophy"></i> {{ team.totalPoints }} pts
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-gamepad"></i> {{ team.games_played }} games
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="team-participants">
+                <div class="participants-label">Team Members:</div>
+                {% for participant in team.participants %}
+                <div class="participant-chip">
+                    <i class="fas fa-user"></i> {{ participant.getFullName() }}
+                </div>
+                {% endfor %}
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="team-card-actions">
+                <a href="{{ url_for('admin.edit_team', team_id=team.id) }}" class="btn-mobile-secondary">
+                    <i class="fas fa-edit"></i> Edit Team
+                </a>
+                <button class="btn-mobile-danger delete-team-btn" data-team-id="{{ team.id }}" data-team-name="{{ team.name }}">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Desktop Table Layout -->
+    <div class="team-table">
+        <table id="teamsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Team Name</th>
+                    <th>Participants</th>
+                    <th>Points</th>
+                    <th>Games Played</th>
+                    {% if current_user.is_authenticated %}
+                    <th class="actions-column">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in teams %}
+                <tr>
+                    <td>{{ team.id }}</td>
+                    <td class="team-name">
+                        <div class="team-name-with-color">
+                            <div class="team-color-indicator" style="background-color: {{ team.color or '#3b82f6' }};"></div>
+                            <span>{{ team.name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% for participant in team.participants %}
+                            <div class="participant">{{ participant.getFullName() }}</div>
+                        {% endfor %}
+                    </td>
+                    <td class="points-cell">{{ team.totalPoints }}</td>
+                    <td>{{ team.games_played }}</td>
+                    {% if current_user.is_authenticated %}
+                    <td class="actions">
+                        <div class="btn-group">
+                            <a href="{{ url_for('admin.edit_team', team_id=team.id) }}" class="btn btn-sm btn-primary" title="Edit Team">
+                                Edit
+                            </a>
+                            <button class="btn btn-sm btn-danger delete-team-btn" title="Delete Team"
+                                    data-team-id="{{ team.id }}" data-team-name="{{ team.name }}">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if current_user.is_authenticated %}
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete the team "<span id="teamToDelete"></span>"?</p>
+        <p class="warning">This action cannot be undone and will remove all participant and score data associated with this team.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary cancel-delete-btn">Cancel</button>
+            <form id="deleteForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">Delete Team</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/teams.js') }}"></script>
+{% endblock %}

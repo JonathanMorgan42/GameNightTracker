@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Flask
+instance/
+*.db
+*.sqlite3
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+reports/
+robot-reports/
+*-report.txt
+*-report.json
+*.log
+log.html
+output.xml
+report.html
+test_results/
+coverage/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Node/NPM (for frontend tooling)
+node_modules/
+package-lock.json
+
+# Frontend build artifacts
+app/static/dist/
+
+# Feedback data
+feedback_data/
+
+# Logs
+logs/
+
+# Migrations (empty directory structure)
+migrations/
+
+# Claude Code CLI
+.claude/

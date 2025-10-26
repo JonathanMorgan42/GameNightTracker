@@ -1,0 +1,606 @@
+/* Game Night Management Admin Styling */
+
+.game-night-management-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 0.5rem 2rem 0.5rem;
+}
+
+/* Page Header - Uses standardized .page-header-main pattern with consistent spacing */
+.game-night-management-container .page-header-main {
+    padding: 2rem 1rem;
+}
+
+.page-header-main .header-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* Active Banner - Subtle style matching app theme */
+.active-game-night-banner {
+    padding: 1.5rem;
+    background: var(--gradient-header);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--accent-green);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+}
+
+.banner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.banner-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-green);
+}
+
+.banner-content h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.banner-date {
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.banner-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+/* Currently Building Banner - Blue theme for building phase */
+.currently-building-banner {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.2) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-left: 4px solid #60a5fa;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+}
+
+/* No Active Banner - Dark theme consistency */
+.no-active-banner {
+    padding: 1.5rem;
+    background: var(--gradient-header);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--accent-gold);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.no-active-banner p {
+    color: var(--text-muted);
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Game Nights List */
+.game-nights-list {
+    margin-top: 2rem;
+}
+
+.game-nights-list h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 1.5rem;
+}
+
+.game-nights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.game-night-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 2px solid rgba(251, 191, 36, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: visible;
+}
+
+.game-night-card.active {
+    border-color: var(--accent-green);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.2) 100%);
+}
+
+.game-night-card.completed {
+    opacity: 0.95;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.2) 100%);
+    border-color: #fbbf24;
+}
+
+.game-night-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    margin-bottom: 1.5rem;
+}
+
+.card-title-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin: 0 0 0.5rem 0;
+}
+
+.card-date {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    margin: 0.25rem 0;
+}
+
+.card-status-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius-full);
+}
+
+.status-badge.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+}
+
+.status-badge.completed {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+.status-badge.building {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+/* Card highlight for working context */
+.game-night-card.working {
+    border-color: #60a5fa;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%);
+}
+
+/* Card Stats - Matching history page style */
+.card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #60a5fa;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Card Quick Actions - Add Team/Game buttons */
+.card-quick-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    justify-content: center;
+}
+
+.card-quick-actions .btn {
+    flex: 1;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.card-quick-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Card Actions */
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(100, 116, 139, 0.3);
+    align-items: center;
+}
+
+.card-actions form {
+    display: block;
+    flex: 1;
+    margin: 0;
+}
+
+.card-actions form button {
+    width: 100%;
+}
+
+.card-actions > a.btn {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-actions .dropdown-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-actions .dropdown-toggle {
+    width: 100%;
+}
+
+/* Dropdown Menu Styles */
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+    position: relative;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    min-width: 220px;
+    z-index: 1000;
+    padding: 0.5rem 0;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+}
+
+.dropdown-item-form {
+    display: block;
+    margin: 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.dropdown-item i {
+    width: 1.25rem;
+    text-align: center;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.dropdown-item-success {
+    color: var(--accent-green);
+}
+
+.dropdown-item-success:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+
+.dropdown-item-danger {
+    color: var(--accent-red);
+}
+
+.dropdown-item-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-red);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: var(--bg-card);
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius-lg);
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-night-management-container {
+        padding: 0 0.35rem 1rem 0.35rem;
+    }
+
+    .game-night-management-container .page-header-main {
+        padding: 1.5rem 0.75rem;
+    }
+
+    .active-game-night-banner,
+    .no-active-banner {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .banner-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .banner-label {
+        font-size: 0.75rem;
+    }
+
+    .banner-date {
+        font-size: 0.9rem;
+    }
+
+    .game-nights-list h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .game-nights-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .game-night-card {
+        padding: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .card-title-section h3 {
+        font-size: 1.25rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .card-date {
+        font-size: 0.85rem;
+    }
+
+    .card-status-badges {
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    .card-stats {
+        gap: 0.5rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .card-quick-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .card-quick-actions .btn {
+        width: 100%;
+    }
+
+    .card-actions {
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .card-actions button,
+    .card-actions a {
+        width: 100%;
+    }
+
+    .card-actions .dropdown-container {
+        width: 100%;
+    }
+
+    .card-actions .dropdown-toggle {
+        width: 100%;
+    }
+
+    /* Mobile dropdown menu - full width and better spacing */
+    .dropdown-menu {
+        left: 0;
+        right: 0;
+        min-width: auto;
+        width: 100%;
+    }
+
+    .dropdown-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .dropdown-item i {
+        width: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-night-management-container {
+        padding: 0 0.25rem 0.75rem 0.25rem;
+    }
+
+    .game-night-management-container .page-header-main {
+        padding: 1.25rem 0.5rem;
+    }
+
+    .active-game-night-banner,
+    .no-active-banner {
+        padding: 0.75rem;
+    }
+
+    .banner-content h2 {
+        font-size: 1.25rem;
+    }
+
+    .game-nights-list h2 {
+        font-size: 1.25rem;
+    }
+
+    .game-night-card {
+        padding: 1rem;
+    }
+
+    .card-title-section h3 {
+        font-size: 1.1rem;
+    }
+
+    .card-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+}
+
+/* Workflow Explanation (Game Night Management) */
+.workflow-explanation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-md);
+}
+
+.workflow-concept {
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: var(--radius-sm);
+}
+
+.workflow-concept h4 {
+    color: var(--accent-blue);
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.workflow-concept p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.workflow-tips {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(251, 191, 36, 0.1);
+    border-left: 3px solid var(--accent-gold);
+    border-radius: var(--radius-sm);
+}
+
+.workflow-tips p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .workflow-explanation {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .workflow-concept {
+        padding: 0.75rem;
+    }
+    
+    .workflow-tips {
+        padding: 0.75rem;
+    }
+}
+
+
+

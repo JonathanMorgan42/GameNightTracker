@@ -1,0 +1,728 @@
+{% extends "base.html" %}
+
+{% block title %}Live Scoring - {{ game.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scores.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<!-- WebSocket Connection Status Indicator -->
+<div class="ws-status-indicator disconnected" title="Connecting...">
+    <span>Live</span>
+</div>
+
+<div class="page-header-detail">
+    <div class="page-header-detail-top">
+        <a href="{{ url_for('main.games') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+    <h1>Live Scoring: {{ game.name }}</h1>
+    {% if has_rounds and current_round %}
+    <p class="context-info">{{ current_round.name }} - Enter scores for all teams</p>
+    {% else %}
+    <p class="context-info">Enter scores for all teams</p>
+    {% endif %}
+</div>
+
+<!-- Game Info Card -->
+<div class="game-info-card">
+    <div class="game-info-content">
+        <div class="game-info-item">
+            <span class="game-info-label">Type:</span>
+            <span class="game-info-value">{{ game.type|title }}</span>
+        </div>
+        <div class="game-info-item">
+            <span class="game-info-label">Scoring:</span>
+            <span class="game-info-value">{{ game.metric_type|title }} ({{ game.scoring_direction.replace('_', ' ')|title }})</span>
+        </div>
+        <div class="game-info-item game-info-item-with-tooltip">
+            <span class="game-info-label">Points:</span>
+            <span class="game-info-value">{{ game.point_scheme }}x multiplier</span>
+            <button type="button" class="info-tooltip-trigger" aria-label="Learn about point schemes">
+                <i class="fas fa-question-circle"></i>
+            </button>
+            <!-- Tooltip content -->
+            <div class="info-tooltip" role="tooltip">
+                <div class="tooltip-header">
+                    <span>How Point Schemes Work</span>
+                    <button type="button" class="tooltip-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="tooltip-body">
+                    <p><strong>Formula:</strong><br>
+                    Points = (Teams - Place + 1) × Point Scheme</p>
+                    <p><strong>Example with 4 teams, {{ game.point_scheme }}× multiplier:</strong></p>
+                    <ul>
+                        <li>1st place: (4 - 1 + 1) × {{ game.point_scheme }} = {{ 4 * game.point_scheme }} points</li>
+                        <li>2nd place: (4 - 2 + 1) × {{ game.point_scheme }} = {{ 3 * game.point_scheme }} points</li>
+                        <li>3rd place: (4 - 3 + 1) × {{ game.point_scheme }} = {{ 2 * game.point_scheme }} points</li>
+                        <li>4th place: (4 - 4 + 1) × {{ game.point_scheme }} = {{ 1 * game.point_scheme }} point</li>
+                    </ul>
+                    <p><em>Higher multipliers mean more points for each position!</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if game.isCompleted %}
+    <div class="alert alert-warning">
+        <strong>Note:</strong> This game has been marked as completed. Changes will update final scores.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Round Selector (for round-based games) -->
+{% if has_rounds and rounds %}
+<div class="round-selector-container">
+    <h3><i class="fas fa-layer-group"></i> Select Round</h3>
+    <div class="round-tabs">
+        {% for round in rounds %}
+        <a href="{{ url_for('admin.edit_scores', game_id=game.id, round_number=round.round_number) }}"
+           class="round-tab {% if current_round and current_round.id == round.id %}active{% endif %}">
+            <span class="round-number">Round {{ round.round_number }}</span>
+            {% if round.description %}
+            <span class="round-description">{{ round.description }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Cumulative Scores Summary -->
+    {% if cumulative_scores %}
+    <div class="cumulative-scores-summary">
+        <h4>Cumulative Standings</h4>
+        <div class="cumulative-list">
+            {% set sorted_teams = cumulative_scores.items()|list %}
+            {% set sorted_teams = sorted_teams|sort(attribute='1.total_points', reverse=True) %}
+            {% for team_id, team_data in sorted_teams %}
+                {% set team = teams|selectattr('id', 'equalto', team_id)|first %}
+                {% if team %}
+                <div class="cumulative-item">
+                    <div class="team-color-dot" style="background-color: {{ team.color }}"></div>
+                    <span class="team-name">{{ team.name }}</span>
+                    <span class="cumulative-points">{{ team_data.total_points }} pts</span>
+                    <span class="rounds-played">({{ team_data.rounds_played }}/{{ rounds|length }} rounds)</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if penalties %}
+<div class="penalties-info-section collapsed" id="penaltiesInfoSection">
+    <h3 id="penaltiesInfoToggle">Available Penalties</h3>
+    <div class="penalties-grid" id="penaltiesInfoContent" style="display: none;">
+        {% for penalty in penalties %}
+        <div class="penalty-card">
+            <div class="penalty-card-header">
+                <span class="penalty-card-name">{{ penalty.name }}</span>
+                <span class="penalty-type-badge">{% if penalty.stackable %}Stackable{% else %}One-time{% endif %}</span>
+            </div>
+            <div class="penalty-card-value">+{{ penalty.value }} {{ penalty.unit }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- How Scoring Works Help Section -->
+<div class="help-section">
+    <button type="button" class="help-section-toggle" id="scoringHelpToggle">
+        <span><i class="fas fa-question-circle help-icon"></i> How Scoring Works</span>
+        <i class="fas fa-chevron-down toggle-icon"></i>
+    </button>
+    <div class="help-section-content" id="scoringHelpContent">
+        <h4><i class="fas fa-calculator"></i> Point Calculation Formula</h4>
+        <div class="help-example">
+            <p><strong>Points = (Number of Teams - Rank + 1) × Point Multiplier</strong></p>
+            <p class="help-note">Example: With 6 teams and a ×2 multiplier:</p>
+            <ul class="help-list">
+                <li>1st place: (6 - 1 + 1) × 2 = <strong>12 points</strong></li>
+                <li>3rd place: (6 - 3 + 1) × 2 = <strong>8 points</strong></li>
+                <li>6th place: (6 - 6 + 1) × 2 = <strong>2 points</strong></li>
+            </ul>
+        </div>
+
+        <h4><i class="fas fa-exclamation-triangle"></i> Penalties</h4>
+        <div class="help-example">
+            <p><strong>Stackable Penalties:</strong> Can be applied multiple times (e.g., +5 sec each time a rule is broken)</p>
+            <p><strong>One-time Penalties:</strong> Apply once per team (e.g., +10 sec for failing a specific challenge)</p>
+            <p class="help-note">For time-based games: Penalties are <strong>added</strong> to your time (higher = worse)<br>
+            For point-based games: Penalties are <strong>subtracted</strong> from your score (lower score = worse)</p>
+        </div>
+
+        <h4><i class="fas fa-save"></i> Auto-Save</h4>
+        <div class="help-example">
+            <p>All scores are saved automatically as you enter them. No need to click "Save" between teams!</p>
+        </div>
+    </div>
+</div>
+
+<!-- Team Selector -->
+<div class="team-selector-container">
+    <label for="team-selector">Select Team to Score:</label>
+    <select id="team-selector" class="team-selector" data-action="switch-team">
+        <option value="">Choose a team...</option>
+        {% for team in teams %}
+        <option value="{{ team.id }}" data-color="{{ team.color }}">
+            {{ team.name }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Team Scoring Card (Initially Hidden) -->
+<div id="team-scoring-card" class="team-scoring-card display-none">
+    <!-- Team Header -->
+    <div class="team-header" id="team-header">
+        <div class="team-info">
+            <div class="team-color-indicator" id="team-color"></div>
+            <h2 id="selected-team-name">Team Name</h2>
+        </div>
+        <div class="team-rank-display">
+            <div class="rank-badge" id="rank-badge">
+                <span class="rank-label">Rank</span>
+                <span class="rank-value" id="rank-display">-</span>
+            </div>
+            <div class="points-badge">
+                <span class="points-label">Points</span>
+                <span class="points-value" id="points-display">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Input Section -->
+    <div class="score-section">
+        {% if game.metric_type == 'time' %}
+        <!-- Timer is the main feature for time-based games -->
+        <h3><i class="fas fa-stopwatch"></i> Stopwatch Timer</h3>
+        <p class="timer-help-text">Use the timer below - it will automatically fill in the score when you click Stop</p>
+
+        <div class="stopwatch-main">
+            <div class="timer-display-large" id="timer-display">00:00.000</div>
+            <div class="stopwatch-controls">
+                <button type="button" data-action="start-stopwatch" class="btn-timer btn-start">
+                    <i class="fas fa-play"></i>
+                    <span>Start</span>
+                </button>
+                <button type="button" data-action="stop-stopwatch" class="btn-timer btn-stop">
+                    <i class="fas fa-stop"></i>
+                    <span>Stop & Save</span>
+                </button>
+                <button type="button" data-action="reset-stopwatch" class="btn-timer btn-reset">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Multi-Timer Stats (appears when multiple users are timing) -->
+        <div id="multi-timer-stats" class="multi-timer-stats" style="display: none;">
+            <div class="multi-timer-header">
+                <div class="multi-timer-summary">
+                    <i class="fas fa-users"></i>
+                    <span id="multi-timer-count">0 timers</span>
+                    <span class="multi-timer-average" id="multi-timer-average"></span>
+                </div>
+                <button type="button"
+                        class="btn-toggle-timers"
+                        id="toggle-timers-btn"
+                        data-action="toggle-timer-list">
+                    <i class="fas fa-eye"></i>
+                    <span>Show Times</span>
+                </button>
+            </div>
+            <div class="multi-timer-list" id="multi-timer-list" style="display: none;">
+                <!-- Timer values will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="score-divider">
+            <span>Or enter time manually</span>
+        </div>
+        {% else %}
+        <h3>Score</h3>
+        {% endif %}
+
+        <div class="unified-score-input">
+            <button type="button" class="score-btn btn-decrement" data-action="decrement-score">
+                <i class="fas fa-minus"></i>
+            </button>
+
+            <input type="number"
+                   id="score-input"
+                   class="score-input-field"
+                   placeholder="{% if game.metric_type == 'time' %}Seconds{% else %}Enter score{% endif %}"
+                   step="0.01"
+                   value=""
+                   data-action="score-change">
+
+            <button type="button" class="score-btn btn-increment" data-action="increment-score">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Penalties Section -->
+    {% if penalties %}
+    <div class="penalties-section collapsed" id="penaltiesSection">
+        <button type="button" class="penalties-section-toggle" id="penaltiesSectionToggle">
+            <div class="toggle-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Add Penalties (Optional)</span>
+            </div>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </button>
+
+        <div class="penalties-section-content" id="penaltiesSectionContent" style="display: none;">
+        {% set stackable_penalties = penalties|selectattr('stackable')|list %}
+        {% set onetime_penalties = penalties|rejectattr('stackable')|list %}
+
+        {% if stackable_penalties %}
+        <div class="stackable-penalties">
+            <h4>Stackable Penalties</h4>
+            <p class="help-text">Can be applied multiple times</p>
+
+            {% for penalty in stackable_penalties %}
+            <div class="penalty-counter-row">
+                <div class="penalty-info-mobile">
+                    <span class="penalty-icon">🔵</span>
+                    <div>
+                        <div class="penalty-name-mobile">{{ penalty.name }}</div>
+                        <div class="penalty-details-mobile">+{{ penalty.value }} {{ penalty.unit }}</div>
+                    </div>
+                </div>
+
+                <div class="penalty-counter">
+                    <button type="button" class="penalty-btn btn-decrement"
+                            onclick="decrementPenalty('{{ penalty.id }}')">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number"
+                           class="penalty-count"
+                           id="penalty-count-{{ penalty.id }}"
+                           value="0"
+                           min="0"
+                           max="99"
+                           onchange="onPenaltyCountChange('{{ penalty.id }}')">
+                    <button type="button" class="penalty-btn btn-increment"
+                            onclick="incrementPenalty('{{ penalty.id }}', {{ penalty.value }}, '{{ penalty.unit }}')">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if onetime_penalties %}
+        <div class="onetime-penalties">
+            <h4>One-Time Penalties</h4>
+            <p class="help-text">Select penalties that apply</p>
+
+            <div class="penalty-tags">
+                {% for penalty in onetime_penalties %}
+                <div class="penalty-tag" id="penalty-tag-{{ penalty.id }}"
+                     data-penalty-id="{{ penalty.id }}"
+                     data-penalty-value="{{ penalty.value }}"
+                     data-penalty-unit="{{ penalty.unit }}"
+                     onclick="togglePenaltyTag('{{ penalty.id }}', {{ penalty.value }}, '{{ penalty.unit }}')">
+                    <span class="penalty-tag-icon">⚪</span>
+                    <div class="penalty-tag-content">
+                        <div class="penalty-tag-name">{{ penalty.name }}</div>
+                        <div class="penalty-tag-value">+{{ penalty.value }} {{ penalty.unit }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Total with Penalties -->
+        <div class="penalty-total">
+            <div class="penalty-total-row">
+                <span>Base Score:</span>
+                <span id="base-score-display">0</span>
+            </div>
+            <div class="penalty-total-row">
+                <span>Penalty Total:</span>
+                <span id="penalty-total-display">0</span>
+            </div>
+            <div class="penalty-total-row final">
+                <span>Final Score:</span>
+                <span id="final-score-display">0</span>
+            </div>
+        </div>
+        </div><!-- Close penalties-section-content -->
+    </div>
+    {% endif %}
+
+    <!-- Clear Button -->
+    <div class="action-buttons">
+        <button type="button" class="btn btn-warning" data-action="clear-team">
+            <i class="fas fa-eraser"></i> Clear Team Score
+        </button>
+    </div>
+</div>
+
+<!-- Rankings Overview (Always Visible) -->
+<div class="rankings-overview">
+    <h3>Current Rankings</h3>
+    <div class="rankings-list" id="rankings-list">
+        <!-- Populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Form for Submission -->
+<form id="scoring-form" method="POST">
+    {{ form.hidden_tag() }}
+
+    <!-- Hidden inputs for all teams -->
+    {% for team in teams %}
+    <input type="hidden" id="score-{{ team.id }}" name="score-{{ team.id }}" value="{{ existing_scores[team.id].score_value if team.id in existing_scores else '' }}">
+    <input type="hidden" id="points-input-{{ team.id }}" name="points-input-{{ team.id }}" value="{{ existing_scores[team.id].points if team.id in existing_scores else 0 }}">
+    <input type="hidden" id="penalties-{{ team.id }}" name="penalties-{{ team.id }}" value="">
+    {% endfor %}
+
+    <!-- Hidden field to always mark as complete on submission -->
+    <input type="hidden" name="is_completed" value="y">
+
+    <!-- What Does Finalization Do Help Section -->
+    <div class="help-section-container">
+        <button type="button" class="help-section-toggle" id="finalizationHelpToggle">
+            <i class="fas fa-question-circle"></i> What Does Finalization Do?
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </button>
+        <div class="help-section-content" id="finalizationHelpContent">
+            <h4><i class="fas fa-check-circle"></i> Marks Game as Complete</h4>
+            <div class="help-example">
+                <p>The game will be marked as "Completed" and moved to the completed games list.</p>
+            </div>
+
+            <h4><i class="fas fa-trophy"></i> Updates Leaderboard</h4>
+            <div class="help-example">
+                <p>All teams' points from this game will be added to the overall leaderboard. Players can see updated rankings immediately.</p>
+            </div>
+
+            <h4><i class="fas fa-lock"></i> Locks Scoring</h4>
+            <div class="help-example">
+                <p>Once finalized, scores cannot be edited. The game is permanently closed.</p>
+            </div>
+
+            <div class="help-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This action cannot be undone! Make sure all scores are correct before finalizing.
+            </div>
+        </div>
+    </div>
+
+    <!-- Finalize Game -->
+    <div class="form-actions">
+        <div class="auto-save-info">
+            <i class="fas fa-info-circle"></i>
+            <span>All scores are saved automatically as you enter them</span>
+        </div>
+        <div class="form-actions-buttons">
+            <a href="{{ url_for('main.games') }}" class="btn btn-secondary btn-back-to-games">
+                <i class="fas fa-arrow-left"></i> Back to Games
+            </a>
+            <button type="button" class="btn btn-primary" id="manualSaveBtn">
+                <i class="fas fa-save"></i>
+                Save & Update Leaderboard
+            </button>
+            <button type="submit" class="btn btn-danger" id="finalizeGameBtn">
+                <i class="fas fa-flag-checkered"></i>
+                Finalize Game
+            </button>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass data to JavaScript
+window.gameData = {
+    id: {{ game.id }},
+    metricType: '{{ game.metric_type }}',
+    scoringDirection: '{{ game.scoring_direction }}',
+    pointScheme: {{ game.point_scheme }},
+    teamsCount: {{ teams|length }},
+    hasRounds: {{ 'true' if has_rounds else 'false' }},
+    currentRoundId: {{ current_round.id if current_round else 'null' }},
+    currentRoundNumber: {{ round_number if round_number else 'null' }}
+};
+
+window.teamsData = {{ teams_json|tojson|safe }};
+window.existingScores = {{ existing_scores_json|tojson|safe }};
+window.penaltiesData = {{ penalties|tojson|safe }};
+window.roundsData = {{ rounds_json|default([])|tojson|safe }};
+window.cumulativeScores = {{ cumulative_scores|default({})|tojson|safe }};
+window.isAdminUser = {{ 'true' if current_user.is_authenticated else 'false' }};
+
+// Help section toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle help sections - Using standardized component classes
+    const helpToggles = document.querySelectorAll('.help-section-toggle');
+    helpToggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const contentId = this.id.replace('Toggle', 'Content');
+            const content = document.getElementById(contentId);
+
+            if (content) {
+                const isVisible = content.classList.contains('visible');
+                if (isVisible) {
+                    content.classList.remove('visible');
+                    this.classList.remove('expanded');
+                } else {
+                    content.classList.add('visible');
+                    this.classList.add('expanded');
+                }
+            }
+        });
+    });
+
+    // Toggle penalties info section (for penalties info at top of page)
+    const penaltiesToggle = document.getElementById('penaltiesInfoToggle');
+    const penaltiesContent = document.getElementById('penaltiesInfoContent');
+    const penaltiesSection = document.getElementById('penaltiesInfoSection');
+
+    if (penaltiesToggle && penaltiesContent) {
+        penaltiesToggle.addEventListener('click', function() {
+            if (penaltiesContent.style.display === 'none') {
+                penaltiesContent.style.display = 'grid';
+                penaltiesSection.classList.remove('collapsed');
+            } else {
+                penaltiesContent.style.display = 'none';
+                penaltiesSection.classList.add('collapsed');
+            }
+        });
+    }
+
+    // Toggle penalties section in team scoring card (collapsed by default)
+    const penaltiesSectionToggle = document.getElementById('penaltiesSectionToggle');
+    const penaltiesSectionContent = document.getElementById('penaltiesSectionContent');
+    const penaltiesSectionContainer = document.getElementById('penaltiesSection');
+
+    if (penaltiesSectionToggle && penaltiesSectionContent) {
+        penaltiesSectionToggle.addEventListener('click', function() {
+            if (penaltiesSectionContent.style.display === 'none') {
+                penaltiesSectionContent.style.display = 'block';
+                penaltiesSectionContainer.classList.remove('collapsed');
+                penaltiesSectionContainer.classList.add('expanded');
+            } else {
+                penaltiesSectionContent.style.display = 'none';
+                penaltiesSectionContainer.classList.remove('expanded');
+                penaltiesSectionContainer.classList.add('collapsed');
+            }
+        });
+    }
+
+    // Manual save button handler
+    const manualSaveBtn = document.getElementById('manualSaveBtn');
+    if (manualSaveBtn) {
+        manualSaveBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            // Update all hidden form fields with current scores
+            if (window.teamScores) {
+                Object.keys(window.teamScores).forEach(teamId => {
+                    const teamScore = window.teamScores[teamId];
+                    const scoreInput = document.getElementById(`score-${teamId}`);
+                    const pointsInput = document.getElementById(`points-input-${teamId}`);
+
+                    if (scoreInput && teamScore.baseScore !== undefined) {
+                        scoreInput.value = teamScore.baseScore;
+                    }
+                    if (pointsInput && teamScore.points !== undefined) {
+                        pointsInput.value = teamScore.points;
+                    }
+                });
+            }
+
+            // Show saving indicator
+            const originalText = manualSaveBtn.innerHTML;
+            manualSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            manualSaveBtn.disabled = true;
+
+            try {
+                // Collect form data
+                const formData = new FormData(document.getElementById('scoring-form'));
+
+                // Determine URL based on whether this is a round-based game
+                const gameId = window.gameData.id;
+                const roundNumber = window.gameData.currentRoundNumber;
+                let url = `/admin/scores/manual-save/${gameId}`;
+                if (roundNumber) {
+                    url += `/round/${roundNumber}`;
+                }
+
+                // Send save request
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success message
+                    manualSaveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                    manualSaveBtn.style.background = '#10b981';
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        manualSaveBtn.innerHTML = originalText;
+                        manualSaveBtn.style.background = '';
+                        manualSaveBtn.disabled = false;
+                    }, 2000);
+
+                    // Show flash message
+                    showAutoSaveBanner(result.message);
+                } else {
+                    // Show error
+                    manualSaveBtn.innerHTML = '<i class="fas fa-times"></i> Error';
+                    manualSaveBtn.style.background = '#ef4444';
+
+                    setTimeout(() => {
+                        manualSaveBtn.innerHTML = originalText;
+                        manualSaveBtn.style.background = '';
+                        manualSaveBtn.disabled = false;
+                    }, 2000);
+
+                    alert('Error saving scores: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving scores:', error);
+                manualSaveBtn.innerHTML = '<i class="fas fa-times"></i> Error';
+                manualSaveBtn.style.background = '#ef4444';
+
+                setTimeout(() => {
+                    manualSaveBtn.innerHTML = originalText;
+                    manualSaveBtn.style.background = '';
+                    manualSaveBtn.disabled = false;
+                }, 2000);
+
+                alert('Failed to save scores. Please try again.');
+            }
+        });
+    }
+
+    // Modal confirmation for finalizing game
+    const finalizeBtn = document.getElementById('finalizeGameBtn');
+    const scoringForm = document.getElementById('scoring-form');
+
+    if (finalizeBtn && scoringForm) {
+        finalizeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Build game summary
+            const gameName = "{{ game.name|safe }}";
+            const teamCount = {{ teams|length }};
+            const completedTeams = Object.keys(window.teamScores || {}).filter(id => {
+                return window.teamScores[id].baseScore > 0 || window.teamScores[id].points > 0;
+            }).length;
+
+            // Create summary message
+            let summaryHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="font-size: 1.1rem; margin-bottom: 1rem;"><strong>Game:</strong> ${gameName}</p>
+                    <p style="margin-bottom: 0.5rem;"><strong>Teams scored:</strong> ${completedTeams} of ${teamCount}</p>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <p style="color: #fca5a5; margin: 0; font-weight: 600;">⚠️ This action is permanent and cannot be undone!</p>
+                </div>
+                <p style="margin-bottom: 0.5rem;">This will:</p>
+                <ul style="margin-left: 1.5rem; margin-bottom: 0;">
+                    <li>Mark the game as complete</li>
+                    <li>Update the leaderboard with final scores</li>
+                    <li>Redirect you to the home leaderboard</li>
+                    <li>Lock all score inputs</li>
+                </ul>
+            `;
+
+            showConfirmModal({
+                title: 'Finalize Game?',
+                message: summaryHTML,
+                confirmText: 'Finalize Game',
+                cancelText: 'Cancel',
+                onConfirm: function() {
+                    // Update all hidden form fields with current scores before submission
+                    if (window.teamScores) {
+                        Object.keys(window.teamScores).forEach(teamId => {
+                            const teamScore = window.teamScores[teamId];
+                            const scoreInput = document.getElementById(`score-${teamId}`);
+                            const pointsInput = document.getElementById(`points-input-${teamId}`);
+
+                            if (scoreInput && teamScore.baseScore !== undefined) {
+                                scoreInput.value = teamScore.baseScore;
+                            }
+                            if (pointsInput && teamScore.points !== undefined) {
+                                pointsInput.value = teamScore.points;
+                            }
+                        });
+                    }
+
+                    // Submit the form
+                    scoringForm.submit();
+                }
+            });
+        });
+    }
+
+    // Tooltip functionality for point scheme info
+    const tooltipTriggers = document.querySelectorAll('.info-tooltip-trigger');
+    tooltipTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Find the associated tooltip (within the same parent)
+            const parent = this.closest('.game-info-item-with-tooltip');
+            const tooltip = parent ? parent.querySelector('.info-tooltip') : null;
+
+            if (tooltip) {
+                // Toggle active class
+                tooltip.classList.toggle('active');
+
+                // Close tooltip when clicking outside
+                if (tooltip.classList.contains('active')) {
+                    setTimeout(() => {
+                        document.addEventListener('click', function closeTooltip(event) {
+                            if (!tooltip.contains(event.target) && event.target !== trigger) {
+                                tooltip.classList.remove('active');
+                                document.removeEventListener('click', closeTooltip);
+                            }
+                        });
+                    }, 0);
+                }
+            }
+        });
+    });
+
+    // Close button in tooltips
+    const tooltipCloseButtons = document.querySelectorAll('.tooltip-close');
+    tooltipCloseButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const tooltip = this.closest('.info-tooltip');
+            if (tooltip) {
+                tooltip.classList.remove('active');
+            }
+        });
+    });
+});
+</script>
+<script src="{{ url_for('static', filename='js/modal-utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/websocket-client.js') }}?v={{ cache_bust }}"></script>
+<script src="{{ url_for('static', filename='js/scores.js') }}?v={{ cache_bust }}"></script>
+{% endblock %}

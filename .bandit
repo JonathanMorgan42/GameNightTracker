@@ -1,0 +1,16 @@
+[bandit]
+# Bandit security scanner configuration
+
+# Directories to exclude from scanning
+exclude_dirs = /tests,/migrations,/instance
+
+# Test IDs to skip (with justification)
+skips =
+    B608  # SQL injection - using SQLAlchemy ORM which is safe
+    B703  # Insecure compare - werkzeug.security is secure
+
+# Confidence level filter
+confidence_level = MEDIUM
+
+# Severity level filter
+severity_level = MEDIUM

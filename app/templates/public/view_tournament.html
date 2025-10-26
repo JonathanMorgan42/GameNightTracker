@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Tournament - {{ game.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tournament.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-detail">
+    <div class="page-header-detail-top">
+        <a href="{{ url_for('main.games') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('admin.reset_tournament', tournament_id=tournament.id) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reset entire tournament? All match results will be cleared.')">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="header-title-section">
+        <i class="fas fa-trophy header-icon"></i>
+        <h1>{{ game.name }}</h1>
+    </div>
+    <p class="context-info">
+        Single Elimination ({{ tournament.bracket_style|title }})
+        {% if tournament.is_completed %}
+        <span class="status-badge completed">Completed</span>
+        {% else %}
+        <span class="status-badge in-progress">In Progress</span>
+        {% endif %}
+        {% if tournament.public_edit %}
+        <span class="status-badge public-edit">Public Editing Enabled</span>
+        {% endif %}
+    </p>
+</div>
+
+<div class="tournament-container">
+
+    {% if tournament.is_completed and tournament.winner_team %}
+    <div class="winner-banner">
+        <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
+        <div class="winner-content">
+            <h2>Champion</h2>
+            <div class="winner-team" style="border-left: 4px solid {{ tournament.winner_team.color }}">
+                {{ tournament.winner_team.name }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bracket-wrapper">
+        <div class="bracket-container">
+            {% for round_num in rounds %}
+            <div class="bracket-round">
+                <div class="round-header">
+                    {% if round_num == 0 %}
+                    Play-in
+                    {% elif round_num == rounds[-1] %}
+                    Final
+                    {% elif round_num == rounds[-2] %}
+                    Semi-finals
+                    {% elif round_num == rounds[-3] %}
+                    Quarter-finals
+                    {% else %}
+                    Round {{ round_num }}
+                    {% endif %}
+                </div>
+                <div class="matches-column">
+                    {% for match in bracket[round_num] %}
+                    <div class="match-card {% if match.status == 'completed' %}completed{% endif %} {% if match.is_bye %}bye{% endif %}"
+                         data-match-id="{{ match.id }}"
+                         {% if (current_user.is_authenticated or tournament.public_edit) and match.is_ready and not match.is_bye %}
+                         data-action="open-score-modal"
+                         data-team1-name="{{ match.team1.name if match.team1 else '' }}"
+                         data-team2-name="{{ match.team2.name if match.team2 else '' }}"
+                         data-team1-id="{{ match.team1.id if match.team1 else 'null' }}"
+                         data-team2-id="{{ match.team2.id if match.team2 else 'null' }}"
+                         data-team1-color="{{ match.team1.color if match.team1 else '' }}"
+                         data-team2-color="{{ match.team2.color if match.team2 else '' }}"
+                         data-round-num="{{ round_num }}"
+                         {% endif %}>
+                        {% if match.is_play_in %}
+                        <div class="play-in-badge">Play-in Match</div>
+                        {% endif %}
+
+                        <div class="match-team {% if match.winner_id == match.team1.id %}winner{% endif %}">
+                            {% if match.team1 %}
+                            <div class="team-color" style="background-color: {{ match.team1.color }}"></div>
+                            <div class="team-name">{{ match.team1.name }}</div>
+                            <div class="team-score">{{ match.team1_score if match.team1_score is not none else '-' }}</div>
+                            {% else %}
+                            <div class="team-placeholder">TBD</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="match-divider"></div>
+
+                        <div class="match-team {% if match.winner_id == match.team2.id %}winner{% endif %}">
+                            {% if match.team2 %}
+                            <div class="team-color" style="background-color: {{ match.team2.color }}"></div>
+                            <div class="team-name">{{ match.team2.name }}</div>
+                            <div class="team-score">{{ match.team2_score if match.team2_score is not none else '-' }}</div>
+                            {% else %}
+                            <div class="team-placeholder">TBD</div>
+                            {% endif %}
+                        </div>
+
+                        {% if match.is_bye %}
+                        <div class="bye-message">
+                            <i class="fas fa-forward"></i> Automatically Advances to Next Round
+                        </div>
+                        {% elif (current_user.is_authenticated or tournament.public_edit) and match.is_ready %}
+                        <div class="match-hint">
+                            {% if match.status == 'completed' %}
+                            <i class="fas fa-edit"></i> Click to edit result
+                            {% else %}
+                            <i class="fas fa-mouse-pointer"></i> Click to score
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Score Match Modal (if admin or public_edit is enabled) -->
+{% if current_user.is_authenticated or tournament.public_edit %}
+<div id="scoreModal" class="modal">
+    <div class="modal-content modal-content-large">
+        <span class="close">&times;</span>
+        <h2><i class="fas fa-trophy"></i> Score Match</h2>
+        <div class="round-info" id="roundInfo"></div>
+
+        <form id="scoreForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="matchId" name="match_id">
+
+            <div class="match-scoring">
+                <div class="team-score-input" id="team1Section">
+                    <div class="team-header">
+                        <div class="team-color-lg" id="team1Color"></div>
+                        <h3 id="team1Name"></h3>
+                    </div>
+                    <div class="score-input-group">
+                        <label for="team1Score">Score</label>
+                        <input type="number" id="team1Score" step="0.01" placeholder="Enter score" class="score-input">
+                    </div>
+                    <button type="button" class="select-winner-btn" data-action="select-winner-1" id="selectWinner1">
+                        <i class="fas fa-check-circle"></i> Select as Winner
+                    </button>
+                </div>
+
+                <div class="vs-divider">
+                    <div class="vs-text">VS</div>
+                </div>
+
+                <div class="team-score-input" id="team2Section">
+                    <div class="team-header">
+                        <div class="team-color-lg" id="team2Color"></div>
+                        <h3 id="team2Name"></h3>
+                    </div>
+                    <div class="score-input-group">
+                        <label for="team2Score">Score</label>
+                        <input type="number" id="team2Score" step="0.01" placeholder="Enter score" class="score-input">
+                    </div>
+                    <button type="button" class="select-winner-btn" data-action="select-winner-2" id="selectWinner2">
+                        <i class="fas fa-check-circle"></i> Select as Winner
+                    </button>
+                </div>
+            </div>
+
+            <input type="hidden" id="winnerId" name="winner_id">
+
+            <div id="winnerDisplay" class="winner-display"></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-action="cancel-modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="fas fa-save"></i> Save Result
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Set authentication flag for tournament.js
+window.isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+</script>
+<script src="{{ url_for('static', filename='js/tournament.js') }}"></script>
+{% endif %}
+{% endblock %}

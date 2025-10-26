@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Games{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-gamepad header-icon"></i>
+        <h1>Games</h1>
+    </div>
+    <p class="header-subtitle">Manage and score all your game night games</p>
+    {% if current_user.is_authenticated %}
+    <div class="header-actions">
+        <a href="{{ url_for('admin.add_game') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Game
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="game-actions">
+        <div class="search">
+            <input type="text" id="gameSearch" placeholder="Search games...">
+        </div>
+        <div class="game-count">
+            <span>{{ games|length }} games total</span>
+        </div>
+    </div>
+
+    <!-- Mobile Card Layout -->
+    <div class="games-mobile-cards">
+        {% for game in games %}
+        <div class="game-card-mobile">
+            <div class="game-card-header">
+                <div class="game-number">#{{ game.sequence_number }}</div>
+                <h3 class="game-title">{{ game.name }}</h3>
+                <div class="game-meta">
+                    <span class="game-badge {{ game.type }}">{{ game.type }}</span>
+                    {% if game.isCompleted %}
+                    <span class="status-badge completed">Completed</span>
+                    {% else %}
+                    <span class="status-badge current">Current</span>
+                    {% endif %}
+                </div>
+                <div class="game-points">×{{ game.point_scheme }} Points</div>
+            </div>
+
+            <div class="game-card-actions">
+                {% if game.type == 'tournament' %}
+                    {% if current_user.is_authenticated %}
+                        {# Check if tournament bracket exists for mobile view #}
+                        {% set has_tournament_mobile = namespace(value=False) %}
+                        {% for t_game in games %}
+                            {% if t_game.id == game.id and t_game.tournament %}
+                                {% set has_tournament_mobile.value = True %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if has_tournament_mobile.value %}
+                            <a href="{{ url_for('admin.view_tournament', game_id=game.id) }}" class="btn-mobile btn-mobile-primary">
+                                <i class="fas fa-trophy"></i> View Tournament Bracket
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('admin.setup_tournament', game_id=game.id) }}" class="btn-mobile btn-mobile-warning">
+                                <i class="fas fa-cog"></i> Setup Tournament
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('main.view_tournament_public', game_id=game.id) }}" class="btn-mobile btn-mobile-primary">
+                            <i class="fas fa-trophy"></i> View Tournament Bracket
+                        </a>
+                    {% endif %}
+                {% else %}
+                    {% if game.isCompleted %}
+                        <a href="{{ url_for('main.view_game_scores', game_id=game.id) }}" class="btn-mobile btn-mobile-primary">
+                            <i class="fas fa-eye"></i> View Scores
+                        </a>
+                    {% elif game.public_input %}
+                        <a href="{{ url_for('main.public_score_game', game_id=game.id) }}" class="btn-mobile btn-mobile-score">
+                            <i class="fas fa-edit"></i> Score This Game
+                        </a>
+                    {% endif %}
+
+                    {% if current_user.is_authenticated %}
+                        {% if not game.isCompleted and not game.public_input %}
+                            <a href="{{ url_for('admin.edit_scores', game_id=game.id) }}" class="btn-mobile btn-mobile-score">
+                                <i class="fas fa-edit"></i> Score This Game
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+
+                {% if current_user.is_authenticated %}
+                <div class="admin-actions-mobile">
+                    <a href="{{ url_for('admin.edit_game', game_id=game.id) }}" class="btn-mobile-small btn-mobile-secondary">
+                        <i class="fas fa-cog"></i> Edit
+                    </a>
+                    <button class="btn-mobile-small btn-mobile-danger delete-game-btn" data-game-id="{{ game.id }}" data-game-name="{{ game.name }}">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Desktop Table Layout -->
+    <div class="game-table">
+        <table id="gamesTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Game Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Point Scheme</th>
+                    <th class="actions-column">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr>
+                    <td class="sequence-cell">{{ game.sequence_number }}</td>
+                    <td class="game-name">{{ game.name }}</td>
+                    <td>
+                        <span class="game-badge {{ game.type }}">{{ game.type }}</span>
+                    </td>
+                    <td>
+                        {% if game.isCompleted %}
+                        <span class="status-badge completed">Completed</span>
+                        {% else %}
+                        <span class="status-badge current">Current</span>
+                        {% endif %}
+                    </td>
+                    <td class="points-cell">×{{ game.point_scheme }}</td>
+                    <td class="actions">
+                        <div class="btn-group">
+                            {% if game.type == 'tournament' %}
+                                {# Tournament game buttons - Unified view for everyone #}
+                                {% if current_user.is_authenticated %}
+                                    {# Check if tournament bracket exists #}
+                                    {% set has_tournament = namespace(value=False) %}
+                                    {% for t_game in games %}
+                                        {% if t_game.id == game.id and t_game.tournament %}
+                                            {% set has_tournament.value = True %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if has_tournament.value %}
+                                        <a href="{{ url_for('admin.view_tournament', game_id=game.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-trophy"></i> View Bracket
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('admin.setup_tournament', game_id=game.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-cog"></i> Setup Tournament
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ url_for('main.view_tournament_public', game_id=game.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-trophy"></i> View Bracket
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                {# Regular game buttons #}
+                                {% if game.isCompleted %}
+                                <a href="{{ url_for('main.view_game_scores', game_id=game.id) }}" class="btn btn-sm btn-primary">View</a>
+                                {% elif game.public_input %}
+                                <a href="{{ url_for('main.public_score_game', game_id=game.id) }}" class="btn btn-sm btn-success">Score</a>
+                                {% endif %}
+
+                                {% if current_user.is_authenticated %}
+                                    {% if not game.isCompleted and not game.public_input %}
+                                    <a href="{{ url_for('admin.edit_scores', game_id=game.id) }}" class="btn btn-sm btn-primary">Score</a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+
+                            {# Admin controls for all games #}
+                            {% if current_user.is_authenticated %}
+                                <a href="{{ url_for('admin.edit_game', game_id=game.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                <button class="btn btn-sm btn-danger delete-game-btn" data-game-id="{{ game.id }}" data-game-name="{{ game.name }}">Delete</button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if current_user.is_authenticated %}
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete the game "<span id="gameToDelete"></span>"?</p>
+        <p class="warning">This action cannot be undone and will remove all score data associated with this game.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary cancel-delete-btn">Cancel</button>
+            <form id="deleteForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">Delete Game</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}

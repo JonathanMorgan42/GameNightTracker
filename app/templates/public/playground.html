@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Simulation Playground - Game Night Tracker{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/playground.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="playground-container">
+    <!-- Back Button -->
+    <div class="playground-header-top">
+        <a href="{{ url_for('main.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
+
+    <!-- Hero/Onboarding Section (NEW) -->
+    <div class="hero-section">
+        <div class="hero-badge">
+            <i class="fas fa-lightbulb"></i> What-If Tool
+        </div>
+        <h1 class="hero-title">Game Night Scenario Planner</h1>
+        <p class="hero-subtitle">See what would happen if upcoming games go certain ways. This won't affect your actual scores.</p>
+
+        <div class="hero-steps">
+            <div class="hero-step">
+                <div class="step-number">1</div>
+                <div class="step-text">Select your team</div>
+            </div>
+            <div class="hero-arrow">→</div>
+            <div class="hero-step">
+                <div class="step-number">2</div>
+                <div class="step-text">Simulate results</div>
+            </div>
+            <div class="hero-arrow">→</div>
+            <div class="hero-step">
+                <div class="step-number">3</div>
+                <div class="step-text">See if you can win!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 1: Setup Section -->
+    <div class="team-goal-section">
+        <h2 class="section-title"><i class="fas fa-user-circle"></i> Playing As</h2>
+        <div id="teamSelectorContainer"></div>
+
+        <!-- Win Possibility Banner -->
+        <div id="winPossibilityContainer"></div>
+    </div>
+
+    <!-- PHASE 2: Simulation Zone -->
+    <div class="simulation-zone">
+        <div class="simulation-zone-header">
+            <h2><i class="fas fa-flask"></i> Run Simulations</h2>
+            <p class="simulation-zone-description">
+                Try different scenarios to see how they affect your team's chances
+            </p>
+        </div>
+
+        <!-- Win Simulator (prominent CTA) -->
+        <div class="win-simulator-callout">
+            <div id="winSimulatorContainer"></div>
+        </div>
+
+        <!-- Manual Game Adjustments -->
+        <div class="games-section">
+            <h3 class="section-title">
+                <i class="fas fa-sliders-h"></i> Or Adjust Manually
+            </h3>
+            <p class="section-subtitle">Change specific game outcomes</p>
+            <div id="gamePlacementContainer">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: Results Zone with Tabs -->
+    <div class="results-zone">
+        <div class="results-tabs">
+            <button class="results-tab active" data-tab="projected" id="projectedTab">
+                <i class="fas fa-crystal-ball"></i> Projected Results
+            </button>
+            <button class="results-tab" data-tab="current" id="currentTab">
+                <i class="fas fa-list-ol"></i> Current Standings
+            </button>
+        </div>
+
+        <div class="results-tab-content active" data-content="projected">
+            <p class="section-subtitle" style="margin-bottom: 1rem;">Based on your scenario</p>
+            <div id="outcomeSummaryContainer" class="outcome-summary-wrapper"></div>
+            <div class="standings-list" id="simulatedStandings">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="results-tab-content" data-content="current">
+            <div class="standings-list" id="currentStandings">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Actions -->
+    <div class="secondary-actions">
+        <button class="btn-reset-link" id="resetAllBtn">
+            <i class="fas fa-undo"></i> Reset All Adjustments
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass data from backend to JavaScript
+window.playgroundTeams = {{ teams_json|tojson }};
+window.playgroundGames = {{ upcoming_games_json|tojson }};
+
+// Tab switching for Results Zone
+document.addEventListener('DOMContentLoaded', function() {
+    const resultsTabs = document.querySelectorAll('.results-tab');
+    const resultsTabContents = document.querySelectorAll('.results-tab-content');
+
+    resultsTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+
+            // Remove active class from all tabs and contents
+            resultsTabs.forEach(t => t.classList.remove('active'));
+            resultsTabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab
+            this.classList.add('active');
+
+            // Show corresponding content
+            const targetContent = document.querySelector(`.results-tab-content[data-content="${targetTab}"]`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+<script src="{{ url_for('static', filename='js/playground.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - View Scores: {{ game.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scores.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-detail">
+    <div class="page-header-detail-top">
+        <a href="{{ url_for('main.games') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+    <h1>Game Scores: {{ game.name }}</h1>
+    <p class="context-info">Game #{{ game.sequence_number }} - {{ game.type|title }}</p>
+</div>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="card scoring-tools">
+    <div class="scoring-method">
+        <div class="preview-header">
+            <h2>Game Details</h2>
+            <p class="preview-description">Information about this game and its scoring</p>
+        </div>
+
+        <div class="scoring-info">
+            <div class="info-item">
+                <span class="info-label">Game Type:</span>
+                <span class="info-value">
+                    <span class="game-badge {{ game.type }}">{{ game.type }}</span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Scoring Method:</span>
+                <span class="info-value">{{ game.metric_type|title }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Status:</span>
+                <span class="info-value">
+                    {% if game.isCompleted %}
+                    <span class="status-badge completed">Completed</span>
+                    {% else %}
+                    <span class="status-badge upcoming">Upcoming</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Point Scheme:</span>
+                <span class="info-value">×{{ game.point_scheme }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="team-scoring-container">
+        <div class="table-wrapper">
+        <table class="scoring-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team</th>
+                    <th>Raw Score</th>
+                    <th>Points Earned</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for score in scores %}
+                    <tr class="{{ 'highlight-' ~ loop.index if loop.index <= 3 else '' }}">
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td class="team-cell">{{ score.team.name }}</td>
+                    <td class="raw-score-cell">
+                        {% if score.score_value is not none %}
+                            {% if game.metric_type == 'time' %}
+                                {{ score.score_value|round(2) }} seconds
+                            {% else %}
+                                {{ score.score_value|round(2) }}
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="points-cell">{{ score.points }}</td>
+                    <td class="notes-cell">{{ score.notes if score.notes else '-' }}</td>
+                </tr>
+                {% endfor %}
+
+                {% if not scores %}
+                <tr>
+                    <td colspan="5" class="no-scores">No scores recorded for this game yet.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="save-actions">
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('admin.edit_scores', game_id=game.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Scores
+            </a>
+        {% endif %}
+        <a href="{{ url_for('main.games') }}" class="btn btn-secondary">Back to Games</a>
+    </div>
+</div>
+
+
+{% endblock %}

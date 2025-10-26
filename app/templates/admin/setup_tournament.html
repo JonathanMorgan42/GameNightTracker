@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Tournament - {{ game.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tournament.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-trophy header-icon"></i>
+        <h1>Setup Tournament Bracket</h1>
+    </div>
+    <p class="header-subtitle">{{ game.name }}</p>
+    <div class="header-actions">
+        <a href="{{ url_for('main.games') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+</div>
+
+<div class="tournament-setup-container">
+    <div class="card">
+        <form method="POST" action="{{ url_for('admin.setup_tournament', game_id=game.id) }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-section">
+                <h3>Bracket Configuration</h3>
+
+                <div class="form-group">
+                    {{ form.pairing_type.label }}
+                    {{ form.pairing_type(class="form-control", id="pairingType") }}
+                    <div class="help-text">
+                        <strong>Random:</strong> Teams are paired randomly. With odd numbers, one team automatically advances to the next round.<br>
+                        <strong>Manual:</strong> You arrange matchups yourself. Teams not paired will automatically advance.
+                    </div>
+                </div>
+
+                <div class="form-group" id="manualPairingSection" style="display: none;">
+                    <label>Manual Team Pairing</label>
+                    <div class="manual-pairing-container">
+                        <div class="pairing-instructions">
+                            <strong>Drag and drop teams to arrange matchups</strong>
+                            <p>Teams on the left will face teams on the right in Round 1. Teams left in "Available Teams" will automatically advance to Round 2 without playing a match.</p>
+                        </div>
+                        <div class="pairing-grid">
+                            <div class="pairing-column">
+                                <h4>Team 1</h4>
+                                <div id="team1Column" class="team-dropzone">
+                                    <!-- Teams will be added here via JavaScript -->
+                                </div>
+                            </div>
+                            <div class="pairing-divider">VS</div>
+                            <div class="pairing-column">
+                                <h4>Team 2</h4>
+                                <div id="team2Column" class="team-dropzone">
+                                    <!-- Teams will be added here via JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="unpaired-teams">
+                            <h4>Available Teams</h4>
+                            <div id="availableTeams" class="team-dropzone">
+                                {% for team in teams %}
+                                <div class="draggable-team" draggable="true" data-team-id="{{ team.id }}">
+                                    <div class="team-color" style="background-color: {{ team.color }}"></div>
+                                    <span>{{ team.name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="manual_pairings" id="manualPairings" value="">
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    {{ form.bracket_style(class="form-control") }}
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Permissions</h3>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        {{ form.public_edit(id="public_edit") }}
+                        {{ form.public_edit.label }}
+                    </div>
+                    <div class="help-text">Allow anyone to update match results (not just admins)</div>
+                </div>
+            </div>
+
+            <div class="teams-preview">
+                <h4>Select Teams to Include (<span id="selectedCount">{{ teams|length }}</span> selected)</h4>
+                <div class="help-text">Uncheck teams you want to exclude from the tournament. With an odd number of teams, one team automatically advances to the next round.</div>
+                <div class="team-selection-list">
+                    {% for team in teams %}
+                    <label class="team-checkbox-item">
+                        <input type="checkbox" name="included_teams" value="{{ team.id }}" checked onchange="updateTeamCount()">
+                        <div class="team-color" style="background-color: {{ team.color }}"></div>
+                        <span>{{ team.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('main.games') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Show/hide manual pairing section based on pairing type
+document.getElementById('pairingType').addEventListener('change', function() {
+    const manualSection = document.getElementById('manualPairingSection');
+    if (this.value === 'manual') {
+        manualSection.style.display = 'block';
+    } else {
+        manualSection.style.display = 'none';
+    }
+});
+
+// Initialize drag and drop with touch support
+let draggedElement = null;
+let touchStartY = 0;
+let touchStartX = 0;
+
+function setupDragAndDrop() {
+    const draggableTeams = document.querySelectorAll('.draggable-team');
+    const dropzones = document.querySelectorAll('.team-dropzone');
+
+    draggableTeams.forEach(team => {
+        // Mouse events
+        team.addEventListener('dragstart', handleDragStart);
+        team.addEventListener('dragend', handleDragEnd);
+
+        // Touch events for mobile
+        team.addEventListener('touchstart', handleTouchStart, { passive: false });
+        team.addEventListener('touchmove', handleTouchMove, { passive: false });
+        team.addEventListener('touchend', handleTouchEnd, { passive: false });
+    });
+
+    dropzones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+        zone.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+// Mouse/Desktop drag handlers
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.5';
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    document.querySelectorAll('.team-dropzone').forEach(zone => {
+        zone.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    this.classList.add('drag-over');
+    return false;
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    this.classList.remove('drag-over');
+
+    if (draggedElement && draggedElement !== this) {
+        this.appendChild(draggedElement);
+        updatePairings();
+    }
+    return false;
+}
+
+// Touch/Mobile drag handlers
+function handleTouchStart(e) {
+    draggedElement = this;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+
+    // Create visual feedback
+    this.style.opacity = '0.7';
+    this.style.transform = 'scale(1.05)';
+    this.style.zIndex = '1000';
+
+    e.preventDefault();
+}
+
+function handleTouchMove(e) {
+    if (!draggedElement) return;
+
+    const touch = e.touches[0];
+    const currentX = touch.clientX;
+    const currentY = touch.clientY;
+
+    // Move the element with the touch
+    draggedElement.style.position = 'fixed';
+    draggedElement.style.left = currentX - (draggedElement.offsetWidth / 2) + 'px';
+    draggedElement.style.top = currentY - (draggedElement.offsetHeight / 2) + 'px';
+
+    // Highlight dropzone under touch
+    const dropzones = document.querySelectorAll('.team-dropzone');
+    dropzones.forEach(zone => {
+        const rect = zone.getBoundingClientRect();
+        if (currentX >= rect.left && currentX <= rect.right &&
+            currentY >= rect.top && currentY <= rect.bottom) {
+            zone.classList.add('drag-over');
+        } else {
+            zone.classList.remove('drag-over');
+        }
+    });
+
+    e.preventDefault();
+}
+
+function handleTouchEnd(e) {
+    if (!draggedElement) return;
+
+    const touch = e.changedTouches[0];
+    const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    // Reset styles
+    draggedElement.style.opacity = '1';
+    draggedElement.style.transform = 'scale(1)';
+    draggedElement.style.zIndex = 'auto';
+    draggedElement.style.position = 'relative';
+    draggedElement.style.left = 'auto';
+    draggedElement.style.top = 'auto';
+
+    // Find the dropzone
+    let dropzone = dropTarget;
+    while (dropzone && !dropzone.classList.contains('team-dropzone')) {
+        dropzone = dropzone.parentElement;
+    }
+
+    // Drop the element
+    if (dropzone && draggedElement.parentElement !== dropzone) {
+        dropzone.appendChild(draggedElement);
+        updatePairings();
+    }
+
+    // Clear all highlights
+    document.querySelectorAll('.team-dropzone').forEach(zone => {
+        zone.classList.remove('drag-over');
+    });
+
+    draggedElement = null;
+    e.preventDefault();
+}
+
+function updatePairings() {
+    const team1Column = document.getElementById('team1Column');
+    const team2Column = document.getElementById('team2Column');
+    const pairings = [];
+
+    const team1Items = team1Column.querySelectorAll('.draggable-team');
+    const team2Items = team2Column.querySelectorAll('.draggable-team');
+
+    const maxPairs = Math.max(team1Items.length, team2Items.length);
+
+    for (let i = 0; i < maxPairs; i++) {
+        const t1 = team1Items[i] ? team1Items[i].dataset.teamId : null;
+        const t2 = team2Items[i] ? team2Items[i].dataset.teamId : null;
+
+        if (t1 && t2) {
+            pairings.push([parseInt(t1), parseInt(t2)]);
+        }
+    }
+
+    document.getElementById('manualPairings').value = JSON.stringify(pairings);
+}
+
+// Update team count when checkboxes change
+function updateTeamCount() {
+    const checked = document.querySelectorAll('input[name="included_teams"]:checked').length;
+    document.getElementById('selectedCount').textContent = checked;
+
+    // Update available teams in manual pairing
+    if (document.getElementById('pairingType').value === 'manual') {
+        updateAvailableTeams();
+    }
+}
+
+// Update draggable teams based on selection
+function updateAvailableTeams() {
+    const availableTeams = document.getElementById('availableTeams');
+    if (!availableTeams) return;
+
+    availableTeams.innerHTML = '';
+
+    const checkedTeams = document.querySelectorAll('input[name="included_teams"]:checked');
+    checkedTeams.forEach(checkbox => {
+        const teamId = checkbox.value;
+        const teamLabel = checkbox.closest('.team-checkbox-item');
+        const teamName = teamLabel.querySelector('span').textContent;
+        const teamColor = teamLabel.querySelector('.team-color').style.backgroundColor;
+
+        const draggableTeam = document.createElement('div');
+        draggableTeam.className = 'draggable-team';
+        draggableTeam.draggable = true;
+        draggableTeam.dataset.teamId = teamId;
+
+        draggableTeam.innerHTML = `
+            <div class="team-color" style="background-color: ${teamColor}"></div>
+            <span>${teamName}</span>
+        `;
+
+        // Add event listeners
+        draggableTeam.addEventListener('dragstart', handleDragStart);
+        draggableTeam.addEventListener('dragend', handleDragEnd);
+        draggableTeam.addEventListener('touchstart', handleTouchStart, { passive: false });
+        draggableTeam.addEventListener('touchmove', handleTouchMove, { passive: false });
+        draggableTeam.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        availableTeams.appendChild(draggableTeam);
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setupDragAndDrop();
+
+    // Trigger initial state
+    const pairingType = document.getElementById('pairingType');
+    if (pairingType.value === 'manual') {
+        document.getElementById('manualPairingSection').style.display = 'block';
+    }
+
+    // Listen to pairing type changes to update teams
+    pairingType.addEventListener('change', function() {
+        if (this.value === 'manual') {
+            updateAvailableTeams();
+        }
+    });
+
+    // Listen to team selection changes
+    document.querySelectorAll('input[name="included_teams"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateTeamCount);
+    });
+});
+</script>
+
+<style>
+.manual-pairing-container {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    border: 1px solid var(--border-light);
+}
+
+.pairing-instructions {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-blue);
+}
+
+.pairing-instructions strong {
+    display: block;
+    color: var(--accent-blue);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.pairing-instructions p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.pairing-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-light);
+}
+
+.pairing-column h4 {
+    color: var(--accent-gold);
+    margin: 0 0 1rem 0;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.pairing-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    padding: 0 1rem;
+}
+
+.team-dropzone {
+    min-height: 150px;
+    padding: 0.75rem;
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius-sm);
+    background: rgba(15, 23, 42, 0.3);
+    transition: all 0.3s;
+}
+
+.team-dropzone.drag-over {
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    border-style: solid;
+}
+
+.draggable-team {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    cursor: move;
+    border: 1px solid var(--border-light);
+    transition: all 0.2s;
+    touch-action: none; /* Better touch handling */
+    user-select: none; /* Prevent text selection during drag */
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.draggable-team:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.draggable-team:active {
+    cursor: grabbing;
+}
+
+.draggable-team .team-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.draggable-team span {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.unpaired-teams {
+    margin-top: 1.5rem;
+}
+
+.unpaired-teams h4 {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.unpaired-teams .team-dropzone {
+    min-height: 100px;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+/* Team Selection Checkboxes */
+.team-selection-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.team-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.team-checkbox-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.team-checkbox-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.team-checkbox-item input[type="checkbox"]:checked {
+    accent-color: var(--accent-blue);
+}
+
+.team-checkbox-item .team-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.team-checkbox-item span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .pairing-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .pairing-divider {
+        padding: 0.5rem 0;
+        font-size: 1rem;
+    }
+
+    .draggable-team {
+        padding: 1rem;
+        cursor: grab;
+    }
+
+    .draggable-team:active {
+        cursor: grabbing;
+    }
+
+    .team-dropzone {
+        min-height: 120px;
+        padding: 0.5rem;
+    }
+
+    .team-dropzone.drag-over {
+        background: rgba(59, 130, 246, 0.25);
+        box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.2);
+        transform: scale(1.02);
+    }
+
+    .pairing-instructions {
+        font-size: 0.9rem;
+    }
+
+    .pairing-instructions strong {
+        font-size: 0.95rem;
+    }
+}
+</style>
+{% endblock %}

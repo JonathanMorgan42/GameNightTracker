@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Edit Game{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scores.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-edit header-icon"></i>
+        <h1>Edit Game: {{ game.name }}</h1>
+    </div>
+    <p class="header-subtitle">Update game details and scoring settings</p>
+    <div class="header-actions">
+        <a href="{{ url_for('main.games') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form method="POST" action="{{ url_for('admin.edit_game', game_id=game.id) }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-section">
+            <h2>Basic Information</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.name.label }}
+                    {{ form.name(class="form-control", placeholder="Enter game name") }}
+                    {% if form.name.errors %}
+                        <div class="form-error">
+                            {% for error in form.name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.type.label }}
+                    {{ form.type(class="form-control", id="game-type-select") }}
+                    {% if form.type.errors %}
+                        <div class="form-error">
+                            {% for error in form.type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group display-none" id="custom-type-group">
+                {{ form.custom_type.label }}
+                {{ form.custom_type(class="form-control", placeholder="e.g., Board Game, Card Game, Puzzle") }}
+                <p class="help-text">Enter your custom game type name</p>
+            </div>
+
+            <div class="form-group">
+                {{ form.sequence_number.label }}
+                <div class="sequence-input-wrapper">
+                    {{ form.sequence_number(class="form-control") }}
+                    <div class="sequence-helper">
+                        <span class="sequence-badge-edit">Current: {{ game.sequence_number }}</span>
+                    </div>
+                </div>
+                {% if form.sequence_number.errors %}
+                    <div class="form-error">
+                        {% for error in form.sequence_number.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <p class="help-text">Change this number to reorder the game. Lower numbers appear first.</p>
+
+                {% if existing_games %}
+                <div class="game-order-preview">
+                    <strong>Other Games:</strong>
+                    <ol class="game-order-list">
+                        {% for existing_game in existing_games %}
+                        <li>
+                            <span class="game-seq">{{ existing_game.sequence_number }}.</span>
+                            <span class="game-name-preview">{{ existing_game.name }}</span>
+                            <span class="game-status-mini">{% if existing_game.isCompleted %}<i class="fas fa-check-circle"></i>{% else %}<i class="far fa-circle"></i>{% endif %}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Scoring Settings</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.point_scheme.label }}
+                    {{ form.point_scheme(class="form-control") }}
+                    {% if form.point_scheme.errors %}
+                        <div class="form-error">
+                            {% for error in form.point_scheme.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="help-text">Points awarded between each place</p>
+                </div>
+
+                <div class="form-group">
+                    {{ form.metric_type.label }}
+                    {{ form.metric_type(class="form-control") }}
+                    {% if form.metric_type.errors %}
+                        <div class="form-error">
+                            {% for error in form.metric_type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="help-text">How teams will be scored</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Scoring Direction</label>
+                <div class="scoring-direction-tiles">
+                    <div class="scoring-tile" data-value="higher_better">
+                        <div class="tile-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="tile-label">Higher Wins</div>
+                        <div class="tile-description">Example: Most points wins</div>
+                    </div>
+                    <div class="scoring-tile" data-value="lower_better">
+                        <div class="tile-icon"><i class="fas fa-stopwatch"></i></div>
+                        <div class="tile-label">Lower Wins</div>
+                        <div class="tile-description">Example: Fastest time wins</div>
+                    </div>
+                </div>
+                {{ form.scoring_direction(id="scoring_direction", class="display-none") }}
+                {% if form.scoring_direction.errors %}
+                    <div class="form-error">
+                        {% for error in form.scoring_direction.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    {{ form.public_input(class="form-check") }}
+                    {{ form.public_input.label }}
+                </div>
+                <p class="help-text">Allow participants to enter their own scores</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Penalties</h2>
+            <p class="help-text">Define penalties such as "False start (+5)" or "Missed target (+10)". Units are automatically based on the scoring method (time = seconds, otherwise = points).</p>
+
+            <div id="penalties-container">
+                <!-- Penalties will be added here dynamically -->
+            </div>
+
+            <button type="button" class="btn btn-secondary" id="add-penalty-btn">
+                <i class="fas fa-plus"></i> Add Penalty
+            </button>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="{{ url_for('main.games') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass data to JavaScript
+window.existingPenalties = {{ penalties_json|tojson|safe }};
+window.teamCount = {{ team_count }};
+window.gameType = '{{ game.type }}';
+</script>
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}

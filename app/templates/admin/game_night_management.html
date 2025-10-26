@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Management - Admin{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/game_night_admin.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="game-night-management-container">
+    <div class="page-header-main">
+        <div class="header-content">
+            <i class="fas fa-calendar-alt header-icon"></i>
+            <h1>Game Night Management</h1>
+        </div>
+        <p class="header-subtitle">Create and manage your game nights</p>
+        <div class="header-actions">
+            <a href="{{ url_for('admin.create_game_night') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Game Night
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Banners -->
+    {% if working_context %}
+    <div class="currently-building-banner">
+        <div class="banner-content">
+            <span class="banner-label"><i class="fas fa-hammer"></i> Currently Building:</span>
+            <h2>{{ working_context.name }}</h2>
+            <span class="banner-date">{{ working_context.date.strftime('%B %d, %Y') }}</span>
+            <span class="banner-info">New teams and games will be added here</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if active_game_night %}
+    <div class="active-game-night-banner">
+        <div class="banner-content">
+            <span class="banner-label"><i class="fas fa-broadcast-tower"></i> Live for Players:</span>
+            <h2>{{ active_game_night.name }}</h2>
+            <span class="banner-date">{{ active_game_night.date.strftime('%B %d, %Y') }}</span>
+            <span class="banner-info">Visible on public leaderboard</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not working_context and not active_game_night %}
+    <div class="no-active-banner">
+        <p><i class="fas fa-info-circle"></i> No game night in progress. Create a new game night to get started!</p>
+    </div>
+    {% endif %}
+
+
+    <!-- Workflow Guide -->
+    <div class="workflow-help-section">
+        <button type="button" class="workflow-toggle-btn" id="workflowToggleBtn">
+            <i class="fas fa-question-circle"></i> How It Works
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </button>
+        <div class="workflow-content" id="workflowContent">
+            <h3><i class="fas fa-route"></i> Game Night Workflow</h3>
+
+            <div class="workflow-explanation">
+                <div class="workflow-concept">
+                    <h4><i class="fas fa-hammer"></i> Building Phase (Private)</h4>
+                    <p>When you set a game night as "Currently Building", teams and games you add will go to this game night. It remains <strong>private</strong> until you activate it.</p>
+                </div>
+                <div class="workflow-concept">
+                    <h4><i class="fas fa-broadcast-tower"></i> Active Phase (Public)</h4>
+                    <p>When you "Go Live on Leaderboard", the game night becomes <strong>immediately visible</strong> to all players. Only activate when you're ready!</p>
+                </div>
+            </div>
+
+            <div class="workflow-steps-horizontal">
+                <div class="workflow-step-item">
+                    <div class="workflow-step-number">1</div>
+                    <div class="workflow-step-info">
+                        <strong>Build</strong>
+                        <p>Create game night, add teams and games (stays private)</p>
+                    </div>
+                </div>
+                <div class="workflow-arrow-right"><i class="fas fa-arrow-right"></i></div>
+                <div class="workflow-step-item">
+                    <div class="workflow-step-number">2</div>
+                    <div class="workflow-step-info">
+                        <strong>Go Live</strong>
+                        <p>Activate to make visible on public leaderboard</p>
+                    </div>
+                </div>
+                <div class="workflow-arrow-right"><i class="fas fa-arrow-right"></i></div>
+                <div class="workflow-step-item">
+                    <div class="workflow-step-number">3</div>
+                    <div class="workflow-step-info">
+                        <strong>Track & End</strong>
+                        <p>Score games during the event, then finalize results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-nights-list">
+        <h2>All Game Nights</h2>
+
+        {% if game_nights %}
+        <div class="game-nights-grid">
+            {% for gn in game_nights %}
+            <div class="game-night-card {% if gn.is_active %}active{% endif %} {% if gn.is_completed %}completed{% endif %} {% if gn.is_working_context %}working{% endif %}">
+                <div class="card-header">
+                    <div class="card-title-section">
+                        <h3>{{ gn.name }}</h3>
+                        <p class="card-date">{{ gn.date.strftime('%B %d, %Y') }}</p>
+                    </div>
+                    <div class="card-status-badges">
+                        {% if gn.is_working_context and not gn.is_active and not gn.is_completed %}
+                        <span class="status-badge building"><i class="fas fa-hammer"></i> Building</span>
+                        {% endif %}
+                        {% if gn.is_active %}
+                        <span class="status-badge active"><i class="fas fa-broadcast-tower"></i> Active</span>
+                        {% endif %}
+                        {% if gn.is_completed %}
+                        <span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">{{ gn.teams_count }}</span>
+                        <span class="stat-label">Teams</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ gn.total_games }}</span>
+                        <span class="stat-label">Games</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ gn.completed_games }}</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                </div>
+
+                <!-- Readiness Checklist -->
+                {% if not gn.is_completed and not gn.is_active %}
+                <div class="readiness-checklist">
+                    <div class="checklist-item {% if gn.teams_count >= 2 %}complete{% endif %}">
+                        <i class="fas {% if gn.teams_count >= 2 %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                        <span>{% if gn.teams_count >= 2 %}{{ gn.teams_count }} teams added{% else %}Add at least 2 teams{% endif %}</span>
+                    </div>
+                    <div class="checklist-item {% if gn.total_games >= 1 %}complete{% endif %}">
+                        <i class="fas {% if gn.total_games >= 1 %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                        <span>{% if gn.total_games >= 1 %}{{ gn.total_games }} game(s) added{% else %}Add at least 1 game{% endif %}</span>
+                    </div>
+                    {% if gn.teams.count() >= 2 and gn.total_games >= 1 %}
+                    <div class="checklist-ready">
+                        <i class="fas fa-thumbs-up"></i> Ready to activate!
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Quick Add Actions -->
+                {% if not gn.is_completed %}
+                <div class="card-quick-actions">
+                    <a href="{{ url_for('admin.add_team', game_night_id=gn.id) }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-users"></i> Add Team
+                    </a>
+                    <a href="{{ url_for('admin.add_game', game_night_id=gn.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-gamepad"></i> Add Game
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="card-actions">
+                    <!-- Primary Actions - Always visible -->
+                    {% if not gn.is_completed %}
+                        {% if gn.is_active %}
+                        <form method="POST" action="{{ url_for('admin.end_game_night', game_night_id=gn.id) }}" class="dropdown-item-form confirm-form" data-confirm-message="End this game night? This will finalize all data and lock edits.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fas fa-stop-circle"></i> End Game Night
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{{ url_for('admin.edit_game_night', game_night_id=gn.id) }}" class="btn btn-secondary btn-sm" title="Edit game night name and date">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+
+                        <!-- More Actions Dropdown -->
+                        <div class="dropdown-container">
+                            <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" title="More actions">
+                                <i class="fas fa-ellipsis-h"></i> More
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{{ url_for('main.history_detail', game_night_id=gn.id) }}" class="dropdown-item">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+
+                                {% if not gn.is_active and not gn.is_working_context %}
+                                <form method="POST" action="{{ url_for('admin.set_working_context', game_night_id=gn.id) }}" class="dropdown-item-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-hammer"></i> Set as Currently Building
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {% if not gn.is_active %}
+                                <form method="POST" action="{{ url_for('admin.activate_game_night', game_night_id=gn.id) }}" class="dropdown-item-form confirm-form" data-confirm-message="This will make '{{ gn.name }}' immediately visible to all players. Ready to go live?">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item dropdown-item-success">
+                                        <i class="fas fa-broadcast-tower"></i> Go Live
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <form method="POST" action="{{ url_for('admin.wipe_game_night', game_night_id=gn.id) }}" class="dropdown-item-form confirm-form" data-confirm-message="Wipe all data from this game night? This cannot be undone!">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item dropdown-item-danger">
+                                        <i class="fas fa-eraser"></i> Wipe Data
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ url_for('admin.delete_game_night', game_night_id=gn.id) }}" class="dropdown-item-form confirm-form" data-confirm-message="Permanently delete this game night? This cannot be undone!">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item dropdown-item-danger">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- For completed game nights, only show View -->
+                        <a href="{{ url_for('main.history_detail', game_night_id=gn.id) }}" class="btn btn-secondary btn-sm" title="View full details and history">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No game nights yet. Create your first one to get started!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/modal-utils.js') }}"></script>
+<script>
+// Handle form confirmation dialogs with modals
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmForms = document.querySelectorAll('.confirm-form');
+    confirmForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const message = this.dataset.confirmMessage;
+            const formElement = this;
+
+            // Determine modal title and warning based on action
+            let title = 'Confirm Action';
+            let warning = '';
+            let confirmText = 'Confirm';
+
+            if (message.includes('delete')) {
+                title = 'Confirm Deletion';
+                warning = 'This action cannot be undone!';
+                confirmText = 'Delete';
+            } else if (message.includes('wipe')) {
+                title = 'Confirm Data Wipe';
+                warning = 'This will remove all teams and games. This cannot be undone!';
+                confirmText = 'Wipe Data';
+            } else if (message.includes('end')) {
+                title = 'End Game Night';
+                warning = 'This will finalize all data and lock edits.';
+                confirmText = 'End Game Night';
+            } else if (message.includes('activate')) {
+                title = 'Activate for Public';
+                warning = 'The game night will become immediately visible to all players.';
+                confirmText = 'Activate';
+            }
+
+            showConfirmModal({
+                title: title,
+                message: message,
+                warning: warning,
+                confirmText: confirmText,
+                cancelText: 'Cancel',
+                onConfirm: function() {
+                    formElement.submit();
+                }
+            });
+        });
+    });
+
+    // Workflow guide toggle
+    const workflowToggleBtn = document.getElementById('workflowToggleBtn');
+    const workflowContent = document.getElementById('workflowContent');
+    const toggleIcon = workflowToggleBtn.querySelector('.toggle-icon');
+
+    if (workflowToggleBtn && workflowContent) {
+        workflowToggleBtn.addEventListener('click', function() {
+            const isHidden = workflowContent.style.display === 'none' || !workflowContent.style.display;
+
+            if (isHidden) {
+                workflowContent.style.display = 'block';
+                toggleIcon.classList.remove('fa-chevron-down');
+                toggleIcon.classList.add('fa-chevron-up');
+            } else {
+                workflowContent.style.display = 'none';
+                toggleIcon.classList.remove('fa-chevron-up');
+                toggleIcon.classList.add('fa-chevron-down');
+            }
+        });
+
+        // Start collapsed
+        workflowContent.style.display = 'none';
+    }
+
+    // Dropdown menu functionality
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const container = this.closest('.dropdown-container');
+            const menu = container.querySelector('.dropdown-menu');
+
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m !== menu) {
+                    m.classList.remove('show');
+                }
+            });
+
+            // Toggle this dropdown
+            menu.classList.toggle('show');
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-container')) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    // Close dropdown after clicking an item
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const menu = this.closest('.dropdown-menu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night Tracker - Leaderboard{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/feedback.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <div class="page-header-main">
+        <div class="header-content">
+            <i class="fas fa-trophy header-icon"></i>
+            <h1>Leaderboard</h1>
+        </div>
+        {% if active_game_night %}
+        <p class="header-subtitle">Live team standings</p>
+        {% else %}
+        <p class="header-subtitle">No active game night</p>
+        {% endif %}
+
+        {% if current_user.is_authenticated and working_context and display_game_night and display_game_night.id == working_context.id %}
+        <div class="admin-context-indicator" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-tools" style="color: #f59e0b;"></i>
+            <div style="flex: 1;">
+                <strong style="color: #92400e;">Currently Building</strong>
+                <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: #78350f;">
+                    You're viewing "{{ working_context.name }}" (your working game night).
+                    {% if active_game_night %}
+                    Public users see "{{ active_game_night.name }}".
+                    {% else %}
+                    This is not yet active for public users.
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{{ url_for('admin.game_night_management') }}" class="btn btn-sm" style="background: #f59e0b; color: white; white-space: nowrap;">
+                Manage
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not active_game_night %}
+    <div class="empty-state-onboarding">
+        <div class="empty-state-icon"><i class="fas fa-gamepad"></i></div>
+        <h2>Welcome to Game Night Tracker!</h2>
+        <p class="empty-state-description">
+            No game night is currently active. To get started, follow these steps:
+        </p>
+        {% if current_user.is_authenticated %}
+
+        <!-- Workflow Visual Guide -->
+        <div class="workflow-guide">
+            <div class="workflow-step">
+                <i class="fas fa-calendar-plus workflow-icon"></i>
+                <div class="workflow-arrow"><i class="fas fa-arrow-right"></i></div>
+            </div>
+            <div class="workflow-step">
+                <i class="fas fa-users workflow-icon"></i>
+                <div class="workflow-arrow"><i class="fas fa-arrow-right"></i></div>
+            </div>
+            <div class="workflow-step">
+                <i class="fas fa-gamepad workflow-icon"></i>
+                <div class="workflow-arrow"><i class="fas fa-arrow-right"></i></div>
+            </div>
+            <div class="workflow-step">
+                <i class="fas fa-play-circle workflow-icon"></i>
+            </div>
+        </div>
+
+        <div class="onboarding-steps">
+            <!-- Step 1: Create Game Night -->
+            <div class="onboarding-step {% if workflow_progress.game_night_created %}onboarding-step-disabled{% endif %}">
+                <div class="onboarding-step-header">
+                    <div class="step-number">1</div>
+                    <h3>Create Game Night</h3>
+                </div>
+                <div class="step-content">
+                    <p>First, create a game night container with a name and date. This is the foundation that will hold your teams and games.</p>
+                    {% if not workflow_progress.game_night_created %}
+                    <a href="{{ url_for('admin.create_game_night') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-calendar-plus"></i> Create Game Night
+                    </a>
+                    {% else %}
+                    <div class="btn btn-success btn-sm">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Step 2: Add Teams -->
+            <div class="onboarding-step {% if not workflow_progress.game_night_created or workflow_progress.teams_added %}onboarding-step-disabled{% endif %}">
+                <div class="onboarding-step-header">
+                    <div class="step-number">2</div>
+                    <h3>Add Teams</h3>
+                </div>
+                <div class="step-content">
+                    <p>After creating a game night, add the teams that will compete (minimum 2 teams required).</p>
+                    {% if workflow_progress.game_night_created and not workflow_progress.teams_added %}
+                    <a href="{{ url_for('admin.add_team') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-users"></i> Add Teams
+                    </a>
+                    {% elif workflow_progress.teams_added %}
+                    <div class="btn btn-success btn-sm">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </div>
+                    {% else %}
+                    <div class="btn btn-secondary btn-sm disabled-btn">
+                        <i class="fas fa-users"></i> Add Teams
+                    </div>
+                    <p class="step-requirement"><i class="fas fa-info-circle"></i> Available after Step 1</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Step 3: Add Games -->
+            <div class="onboarding-step {% if not workflow_progress.teams_added or workflow_progress.games_added %}onboarding-step-disabled{% endif %}">
+                <div class="onboarding-step-header">
+                    <div class="step-number">3</div>
+                    <h3>Add Games</h3>
+                </div>
+                <div class="step-content">
+                    <p>Define the games you'll play during the event (minimum 1 game required).</p>
+                    {% if workflow_progress.teams_added and not workflow_progress.games_added %}
+                    <a href="{{ url_for('admin.add_game') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-gamepad"></i> Add Games
+                    </a>
+                    {% elif workflow_progress.games_added %}
+                    <div class="btn btn-success btn-sm">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </div>
+                    {% else %}
+                    <div class="btn btn-secondary btn-sm disabled-btn">
+                        <i class="fas fa-gamepad"></i> Add Games
+                    </div>
+                    <p class="step-requirement"><i class="fas fa-info-circle"></i> Available after Step 2</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Step 4: Activate Game Night -->
+            <div class="onboarding-step {% if not workflow_progress.ready_to_activate %}onboarding-step-disabled{% endif %}">
+                <div class="onboarding-step-header">
+                    <div class="step-number">4</div>
+                    <h3>Activate Game Night</h3>
+                </div>
+                <div class="step-content">
+                    <p>When ready, activate your game night to make it <strong>immediately visible to all players</strong> on this leaderboard.</p>
+                    {% if workflow_progress.ready_to_activate %}
+                    <a href="{{ url_for('admin.game_night_management') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-broadcast-tower"></i> Go to Activation
+                    </a>
+                    <p class="step-requirement"><i class="fas fa-lightbulb"></i> Click "Activate for Public" in Game Night Management</p>
+                    {% else %}
+                    <div class="btn btn-secondary btn-sm disabled-btn">
+                        <i class="fas fa-play-circle"></i> Activate
+                    </div>
+                    <p class="step-requirement"><i class="fas fa-info-circle"></i> Available after Steps 1-3</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Help -->
+        <div class="onboarding-help">
+            <p><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> You can manage all your game nights from the <a href="{{ url_for('admin.game_night_management') }}">Game Night Management</a> page.</p>
+        </div>
+        {% else %}
+        <p class="empty-state-description">
+            Please contact an administrator to set up the game night. <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                <i class="fas fa-sign-in-alt"></i> Admin Login
+            </a>
+        </p>
+        {% endif %}
+    </div>
+    {% else %}
+
+    <div class="view-controls">
+        <div class="view-toggles">
+            <button id="tableViewBtn" class="view-btn active">
+                <i class="fas fa-table"></i> Table
+            </button>
+            <button id="cardViewBtn" class="view-btn">
+                <i class="fas fa-th-large"></i> Cards
+            </button>
+            <a href="{{ url_for('main.playground') }}" class="view-btn playground-btn">
+                <i class="fas fa-gamepad"></i> Playground
+            </a>
+        </div>
+    </div>
+
+    <div id="cardView" class="card-view hidden">
+        <div class="rankings-card">
+            <h2 class="card-section-title">Current Standings</h2>
+            {% for team in teams %}
+            <div class="team-ranking-item">
+                <div class="rank-number">{{ loop.index }}</div>
+                <div class="team-color-dot" style="background-color: {{ team.color or '#3b82f6' }};"></div>
+                <div class="team-name-large">{{ team.name }}</div>
+                <div class="team-total-points">{{ team.totalPoints or 0 }} pts</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if completed_games %}
+        <div class="completed-games-card">
+            <h2 class="card-section-title">Completed Games</h2>
+            {% for game in completed_games|reverse %}
+            <div class="completed-game-card">
+                <div class="completed-game-header">
+                    <div class="game-number">#{{ game.sequence_number }}</div>
+                    <div class="game-title-section">
+                        <div class="game-name">{{ game.name }}</div>
+                        <div class="game-meta">
+                            <span class="game-badge {{ game.type }}">{{ game.type }}</span>
+                            <span class="game-points">×{{ game.point_scheme }} points</span>
+                        </div>
+                    </div>
+                    <span class="status-badge completed">Completed</span>
+                </div>
+                <div class="completed-game-scores">
+                    {% for team in teams %}
+                    {% set score = getScore(team.id, game.id) %}
+                    {% if score %}
+                    <div class="team-score-row">
+                        <div class="team-score-info">
+                            <div class="team-color-dot" style="background-color: {{ team.color or '#3b82f6' }};"></div>
+                            <span class="team-name-small">{{ team.name }}</span>
+                        </div>
+                        <div class="score-values">
+                            {% if score.score_value is not none %}
+                            <span class="raw-score">{{ score.score_value }}{% if game.metric_type == 'time' %}s{% endif %}</span>
+                            <span class="score-separator">→</span>
+                            {% endif %}
+                            <span class="points-earned">{{ score.points }} pts</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if upcoming_games %}
+        <div class="upcoming-games-card">
+            <h2 class="card-section-title">Upcoming Games</h2>
+            {% for game in upcoming_games %}
+            <div class="upcoming-game-item">
+                <div class="game-number">#{{ game.sequence_number }}</div>
+                <div class="game-details">
+                    <div class="game-name">{{ game.name }}</div>
+                    <div class="game-meta">
+                        <span class="game-badge {{ game.type }}">{{ game.type }}</span>
+                        <span class="game-points">×{{ game.point_scheme }} points</span>
+                    </div>
+                </div>
+                <div class="game-status">
+                    <span class="status-badge upcoming">Upcoming</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="tableView" class="table-view">
+        <div class="table-card">
+            <div class="table-scroll">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col rank-column">#</th>
+                            <th class="sticky-col team-column">Team</th>
+                            {% for game in games %}
+                            <th>{{ game.name }}</th>
+                            {% endfor %}
+                            <th class="total-column">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for team in teams %}
+                        <tr>
+                            <td class="sticky-col rank-column">{{ loop.index }}</td>
+                            <td class="sticky-col team-column">
+                                <div class="team-info-cell">
+                                    <div class="team-color-dot" style="background-color: {{ team.color or '#3b82f6' }};"></div>
+                                    <span class="team-name-text" data-full-name="{{ team.name }}" data-abbreviation="{{ team.abbreviation }}" title="{{ team.name }}">
+                                        <span class="team-name-full">{{ team.name }}</span>
+                                        <span class="team-name-abbr">{{ team.abbreviation }}</span>
+                                    </span>
+                                </div>
+                            </td>
+                            {% for game in games %}
+                            {% set score = getScore(team.id, game.id) %}
+                            <td>{{ score.points if score else '—' }}</td>
+                            {% endfor %}
+                            <td class="total-column">{{ team.totalPoints or 0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Feedback Section -->
+    <div class="feedback-section">
+        <div class="feedback-button-container">
+            <a href="{{ url_for('main.feedback') }}" class="feedback-cta-btn">
+                <i class="fas fa-comment-dots"></i>
+                Please Give Me Your Feedback
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

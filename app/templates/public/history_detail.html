@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ game_night.name }} - History{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="history-detail-container">
+    <div class="page-header-detail history-header-gold-detail">
+        <div class="page-header-detail-top">
+            <a href="{{ url_for('main.history') }}" class="back-button">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+        </div>
+        <div class="header-top">
+            <h1>{{ game_night.name }}</h1>
+            {% if game_night.is_completed %}
+            <span class="archived-badge">Archived</span>
+            {% endif %}
+        </div>
+        <p class="context-info">{{ game_night.date.strftime('%A, %B %d, %Y') }}</p>
+        {% if game_night.ended_at %}
+        <p class="context-info-secondary">Ended at {{ game_night.ended_at.strftime('%I:%M %p') }}</p>
+        {% endif %}
+    </div>
+
+    {% if winner %}
+    <div class="winner-showcase">
+        <i class="fas fa-trophy winner-trophy"></i>
+        <div class="winner-content">
+            <h2>Champion</h2>
+            <div class="winner-team">
+                <div class="team-color-indicator" style="background-color: {{ winner.color }};"></div>
+                <h3>{{ winner.name }}</h3>
+            </div>
+            <p class="winner-score">{{ winner.totalPoints }} Total Points</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="final-standings">
+        <h2>Final Standings</h2>
+        <div class="standings-list">
+            {% for team in teams %}
+            <div class="standing-item {% if loop.index == 1 %}winner{% endif %}">
+                <div class="standing-rank">
+                    {{ loop.index }}
+                </div>
+                <div class="team-color-dot" style="background-color: {{ team.color }};"></div>
+                <div class="standing-team-name">{{ team.name }}</div>
+                <div class="standing-points">{{ team.totalPoints or 0 }} pts</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if completed_games %}
+    <div class="games-recap">
+        <h2>Games Played</h2>
+        <div class="games-recap-grid">
+            {% for game in completed_games %}
+            <div class="game-recap-card">
+                <div class="game-recap-header">
+                    <span class="game-number">#{{ game.sequence_number }}</span>
+                    <h3>{{ game.name }}</h3>
+                    <span class="game-type-badge">{{ game.type }}</span>
+                </div>
+                <div class="game-recap-scores">
+                    {% for team in teams %}
+                    {% set score = getScore(team.id, game.id) %}
+                    {% if score %}
+                    <div class="recap-score-row">
+                        <div class="team-color-dot" style="background-color: {{ team.color }};"></div>
+                        <span class="recap-team-name">{{ team.name }}</span>
+                        <div class="recap-score-values">
+                            {% if score.score_value is not none %}
+                            <span class="recap-raw-score">{{ score.score_value }}{% if game.metric_type == 'time' %}s{% endif %}</span>
+                            <span class="score-arrow">→</span>
+                            {% endif %}
+                            <span class="recap-points">{{ score.points }} pts</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if game_night.is_completed %}
+    <div class="archive-notice">
+        <p>This game night is archived and cannot be edited.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
+{% endblock %}

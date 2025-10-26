@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Create Tournament{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tournament.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header-main">
+    <div class="header-content">
+        <i class="fas fa-trophy header-icon"></i>
+        <h1>Create New Tournament</h1>
+    </div>
+    <p class="header-subtitle">Set up a tournament bracket for all teams</p>
+    <div class="header-actions">
+        <a href="{{ url_for('main.games') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="tournament-card">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if teams|length < 2 %}
+        <div class="alert alert-error">
+            You need at least 2 teams to create a tournament. Please <a href="{{ url_for('admin.add_team') }}" style="color: var(--accent-blue); text-decoration: underline;">add teams</a> first.
+        </div>
+        {% else %}
+
+        <form method="POST" action="{{ url_for('admin.create_tournament_direct') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-section">
+                <h3>Tournament Details</h3>
+
+                <div class="form-group">
+                    <label for="game_name">Tournament Name</label>
+                    <input type="text" id="game_name" name="game_name" class="form-control"
+                           placeholder="e.g., Championship Bracket, Finals Tournament"
+                           required value="Tournament">
+                    <div class="help-text">Give your tournament a memorable name</div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Bracket Configuration</h3>
+
+                <div class="form-group">
+                    {{ form.pairing_type.label }}
+                    {{ form.pairing_type(class="form-control") }}
+                    <div class="help-text">
+                        <strong>Random:</strong> Teams are paired randomly. With odd numbers, one team automatically advances to the next round.<br>
+                        <strong>Manual:</strong> After creation, you can arrange matchups manually on the tournament page.
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    {{ form.bracket_style(class="form-control") }}
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Permissions</h3>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        {{ form.public_edit(id="public_edit") }}
+                        {{ form.public_edit.label }}
+                    </div>
+                    <div class="help-text">Allow anyone to update match results (not just admins)</div>
+                </div>
+            </div>
+
+            <div class="teams-preview">
+                <h4>Select Teams to Include (<span id="selectedCount">{{ teams|length }}</span> selected)</h4>
+                <div class="help-text">Uncheck teams you want to exclude from the tournament. With an odd number of teams, one team automatically advances to the next round.</div>
+                <div class="team-selection-list">
+                    {% for team in teams %}
+                    <label class="team-checkbox-item">
+                        <input type="checkbox" name="included_teams" value="{{ team.id }}" checked onchange="updateTeamCount()">
+                        <div class="team-color" style="background-color: {{ team.color }}"></div>
+                        <span>{{ team.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('main.games') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function updateTeamCount() {
+    const checked = document.querySelectorAll('input[name="included_teams"]:checked').length;
+    document.getElementById('selectedCount').textContent = checked;
+}
+</script>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Team Selection Checkboxes */
+.team-selection-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.team-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.team-checkbox-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.team-checkbox-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.team-checkbox-item input[type="checkbox"]:checked {
+    accent-color: var(--accent-blue);
+}
+
+.team-checkbox-item .team-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.team-checkbox-item span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+</style>
+{% endblock %}

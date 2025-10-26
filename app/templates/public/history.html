@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Game Night History{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="page-header-main history-header-gold">
+        <div class="header-content">
+            <i class="fas fa-history header-icon"></i>
+            <h1>Game Night History</h1>
+        </div>
+        <p class="header-subtitle">Relive past epic game nights</p>
+    </div>
+
+    {% if game_nights %}
+    <div class="history-grid">
+        {% for gn in game_nights %}
+        <div class="history-card archived">
+            <div class="card-header">
+                <h2>{{ gn.name }}</h2>
+                <p class="card-date">{{ gn.date.strftime('%B %d, %Y') }}</p>
+                {% if gn.ended_at %}
+                <p class="card-ended">Ended: {{ gn.ended_at.strftime('%I:%M %p') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="card-stats">
+                <div class="stat">
+                    <span class="stat-value">{{ gn.teams.count() }}</span>
+                    <span class="stat-label">Teams</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ gn.total_games }}</span>
+                    <span class="stat-label">Total Games</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ gn.completed_games }}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            </div>
+
+            {% set winner = gn.get_winner() %}
+            {% if winner %}
+            <div class="winner-banner">
+                <i class="fas fa-trophy trophy-icon"></i>
+                <div class="winner-info">
+                    <span class="winner-label">Winner</span>
+                    <span class="winner-name">{{ winner.name }}</span>
+                    <span class="winner-points">{{ winner.totalPoints }} points</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card-footer">
+                <a href="{{ url_for('main.history_detail', game_night_id=gn.id) }}" class="btn-view-details">
+                    View Full Details →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-gamepad empty-icon"></i>
+        <h3>No completed game nights yet</h3>
+        <p>Game nights will appear here once they're completed</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
