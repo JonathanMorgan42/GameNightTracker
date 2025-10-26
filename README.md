@@ -45,7 +45,7 @@ A web application for managing competitive game nights with real-time scoring, t
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/JonathanMorgan42/GameNightTracker.git
 cd GameNight
 
 # Set up Python environment
